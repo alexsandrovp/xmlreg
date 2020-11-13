@@ -93,8 +93,8 @@ wstring errorToString(int error)
 	case ERROR_USAGE_NOIMPORT_AND_NOEXPORT: return L"must use either --import or --export";
 	case ERROR_USAGE_NO_FILE: return L"no file specified";
 	case ERROR_USAGE_PARAMETER_WITHOUT_SWITCH: return L"parameter without preceding switch";
-	case ERROR_USAGE_NO_INPUT_HIVE: L"no input hive";
-	case ERROR_USAGE_NO_OUTPUT_HIVE: L"no output hive";
+	case ERROR_USAGE_NO_INPUT_HIVE: return L"no input hive";
+	case ERROR_USAGE_NO_OUTPUT_HIVE: return L"no output hive";
 	}
 
 	wstringstream ss;
