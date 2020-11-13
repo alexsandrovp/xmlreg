@@ -102,7 +102,7 @@ void workOnProperty(HKEY hive, const wstring& key, REGSAM redirection, pugi::xml
 	case REG_RESOURCE_REQUIREMENTS_LIST:
 	default:
 		wcout << "ignoring unsupported registry value type: "
-			<< stype << ", value name: " << name << ", key: " << key << endl;
+			<< stype << ", value name: " << name << "\n\ton: " << key << endl;
 	}
 }
 

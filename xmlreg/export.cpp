@@ -96,12 +96,19 @@ void convertKey(HKEY hive, const wstring& key, REGSAM redirection, pugi::xml_nod
 			break;
 
 			case REG_BINARY:
-			default:
 			{
 				auto value = winreg::getBinaryAsBase64(hive, key, property, "", redirection);
 				elem.append_child(pugi::node_pcdata).set_value(wstring_from_utf8(value).c_str());
 			}
 			break;
+
+			case REG_LINK:
+			case REG_RESOURCE_LIST:
+			case REG_FULL_RESOURCE_DESCRIPTOR:
+			case REG_RESOURCE_REQUIREMENTS_LIST:
+			default:
+				wcout << "ignoring unsupported registry value type: "
+					<< utils::propTypeToString(type) << ", value name: " << property << "\n\ton: " << key << endl;
 		}
 	}
 
