@@ -22,28 +22,11 @@ freely, subject to the following restrictions:
 #include "base64.h"
 
 #include <codecvt>
+#include <algorithm>
 
 #include <Shlwapi.h>
 
 using namespace std;
-
-inline string b64encode(const char* data, size_t data_length)
-{
-	char* buffer = nullptr;
-	size_t len = base64_encode(data, data_length, &buffer, 1);
-	string ret(buffer, len);
-	delete[] buffer;
-	return ret;
-}
-
-inline string b64decode(string data)
-{
-	char* buffer = nullptr;
-	size_t len = base64_decode(data.c_str(), data.length(), &buffer);
-	string ret(buffer, len);
-	delete[] buffer;
-	return ret;
-}
 
 inline wstring wstring_from_utf8(const string& str)
 {
@@ -81,6 +64,7 @@ namespace winreg {
 				path = path.substr(pos + 1);
 			}
 			else path = L"";
+			transform(hive.begin(), hive.end(), hive.begin(), ::toupper);
 			if (hive == L"HKLM" || hive == L"HKLM:" || hive == L"HKEY_LOCAL_MACHINE" || hive == L"HKEY_LOCAL_MACHINE:") ret = HKEY_LOCAL_MACHINE;
 			if (hive == L"HKCR" || hive == L"HKCR:" || hive == L"HKEY_CLASSES_ROOT" || hive == L"HKEY_CLASSES_ROOT:") ret = HKEY_CLASSES_ROOT;
 			if (hive == L"HKU" || hive == L"HKU:" || hive == L"HKEY_USERS" || hive == L"HKEY_USERS:") ret = HKEY_USERS;
@@ -195,11 +179,13 @@ namespace winreg {
 		const unsigned int keyBufferSize = 256;
 		if (RegOpenKeyExW(hive, key.c_str(), 0, KEY_ENUMERATE_SUB_KEYS | redirection, &hKey) == ERROR_SUCCESS)
 		{
-			for (unsigned int i = 0; ; ++i)
+			unsigned int i = 0;
+			unsigned long loop = 0;
+			while (loop != ERROR_NO_MORE_ITEMS)
 			{
 				wchar_t keyName[keyBufferSize] = { 0 };
 				DWORD buffSize = keyBufferSize;
-				if (RegEnumKeyExW(hKey, i, keyName, &buffSize, NULL, NULL, NULL, NULL) == ERROR_NO_MORE_ITEMS) break;
+				loop = RegEnumKeyExW(hKey, i++, keyName, &buffSize, NULL, NULL, NULL, NULL);
 				if (keyName[0] != L'\0') ret.push_back(keyName);
 			}
 			RegCloseKey(hKey);
@@ -314,6 +300,7 @@ namespace winreg {
 				delete[] buffer;
 				return ret;
 			}
+			RegCloseKey(hKey);
 		}
 		return default_value;
 	}
@@ -392,8 +379,7 @@ namespace winreg {
 	{
 		vector<wstring> wvalue;
 		bool ret = getMultiString(hive, wstring_from_utf8(key), wstring_from_utf8(property), wvalue, redirection);
-		for (auto it = wvalue.begin(); it != wvalue.end(); ++it)
-			value.push_back(utf8_from_wstring(*it));
+		for (auto it = wvalue.begin(); it != wvalue.end(); ++it) value.push_back(utf8_from_wstring(*it));
 		return ret;
 	}
 	bool getMultiString(HKEY hive, wstring key, wstring property, vector<wstring>& value, REGSAM redirection)
@@ -434,19 +420,14 @@ namespace winreg {
 	bool setMultiString(HKEY hive, string key, string property, const vector<string>& value, REGSAM redirection)
 	{
 		vector<wstring> wvalue;
-		for (auto it = value.begin(); it != value.end(); ++it)
-			wvalue.push_back(wstring_from_utf8(*it));
+		for (auto it = value.begin(); it != value.end(); ++it) wvalue.push_back(wstring_from_utf8(*it));
 		return setMultiString(hive, wstring_from_utf8(key), wstring_from_utf8(property), wvalue, redirection);
 	}
 	bool setMultiString(HKEY hive, wstring key, wstring property, const vector<wstring>& value, REGSAM redirection)
 	{
-		bool ret = false;
 		HKEY hKey;
-		if (RegOpenKeyExW(hive, key.c_str(), 0, KEY_WRITE | redirection, &hKey) == ERROR_FILE_NOT_FOUND)
-		{
-			RegCreateKeyW(hive, key.c_str(), &hKey);
-			RegCloseKey(hKey);
-		}
+		bool ret = false;
+		
 		if (RegOpenKeyExW(hive, key.c_str(), 0, KEY_WRITE | redirection, &hKey) == ERROR_SUCCESS)
 		{
 			size_t trueSize = 2;
@@ -549,8 +530,7 @@ namespace winreg {
 			DWORD type;
 			if (RegQueryValueExW(hKey, property.c_str(), NULL, &type, buffer, &nsize) == ERROR_SUCCESS && type == REG_DWORD_BIG_ENDIAN)
 			{
-				for (int i = 0; i < size; ++i)
-					invertedbuffer[i] = buffer[size - i - 1];
+				for (int i = 0; i < size; ++i) invertedbuffer[i] = buffer[size - i - 1];
 				memcpy(&ret, invertedbuffer, size);
 				RegCloseKey(hKey);
 				return ret;
@@ -572,8 +552,7 @@ namespace winreg {
 			unsigned char* bytes = new unsigned char[size];
 			unsigned char* invertedbytes = new unsigned char[size];
 			memcpy(bytes, &number, size);
-			for (int i = 0; i < size; ++i)
-				invertedbytes[i] = bytes[size - i - 1];
+			for (int i = 0; i < size; ++i) invertedbytes[i] = bytes[size - i - 1];
 			RegSetValueExW(hKey, property.c_str(), NULL, REG_DWORD_BIG_ENDIAN, (BYTE*)invertedbytes, size);
 			delete[] bytes;
 			delete[] invertedbytes;
@@ -632,14 +611,9 @@ namespace winreg {
 
 
 	// binary
-	bool getBinary(HKEY hive, string key, string property, char*& data, size_t& datalen, REGSAM redirection)
-	{
-		return getBinary(hive, wstring_from_utf8(key), wstring_from_utf8(property), data, datalen, redirection);
-	}
 	bool getBinary(HKEY hive, wstring key, wstring property, char*& data, size_t& datalen, REGSAM redirection)
 	{
 		HKEY hKey = NULL;
-		BYTE* buffer = NULL;
 		if (RegOpenKeyExW(hive, key.c_str(), 0, KEY_READ | redirection, &hKey) == ERROR_SUCCESS)
 		{
 			DWORD type;
@@ -651,16 +625,38 @@ namespace winreg {
 				{
 					data = new char[nsize];
 					memcpy(data, buffer, nsize);
-					datalen = nsize;
 					delete[] buffer;
+					datalen = nsize;
 					RegCloseKey(hKey);
 					return true;
 				}
+				delete[] buffer;
 			}
-			if (buffer != NULL) delete[] buffer;
 			RegCloseKey(hKey);
 		}
 		return false;
+	}
+	bool getBinary(HKEY hive, string key, string property, char*& data, size_t& datalen, REGSAM redirection)
+	{
+		return getBinary(hive, wstring_from_utf8(key), wstring_from_utf8(property), data, datalen, redirection);
+	}
+	bool getBinary(HKEY hive, string key, string property, string& result, REGSAM redirection)
+	{
+		size_t len;
+		char* buffer;
+		bool ret = getBinary(hive, wstring_from_utf8(key), wstring_from_utf8(property), buffer, len, redirection);
+		if (ret) result = string(buffer, len);
+		delete[] buffer;
+		return ret;
+	}
+	bool getBinary(HKEY hive, wstring key, wstring property, string& result, REGSAM redirection)
+	{
+		size_t len;
+		char* buffer;
+		bool ret = getBinary(hive, key, property, buffer, len, redirection);
+		if (ret) result = string(buffer, len);
+		delete[] buffer;
+		return ret;
 	}
 	string getBinaryAsBase64(HKEY hive, string key, string property, string default_value, REGSAM redirection)
 	{
@@ -674,8 +670,8 @@ namespace winreg {
 		if (getBinary(hive, key, property, buffer, datalen, redirection))
 		{
 			std::string s = b64encode(buffer, datalen);
-			if (s.length() > 0) ret = s;
 			delete[] buffer;
+			ret = s;
 		}
 		return ret;
 	}
@@ -704,6 +700,116 @@ namespace winreg {
 		string s = b64decode(data);
 		return setBinary(hive, key, property, s.c_str(), s.length(), redirection);
 	}
+
+
+
+
+	// other types
+	bool getAsByteArray(HKEY hive, wstring key, wstring property, char*& data, size_t& datalen, unsigned long& type, REGSAM redirection)
+	{
+		HKEY hKey = NULL;
+		if (RegOpenKeyExW(hive, key.c_str(), 0, KEY_READ | redirection, &hKey) == ERROR_SUCCESS)
+		{
+			DWORD dwType;
+			DWORD nsize = 0;
+
+			if (RegQueryValueExW(hKey, property.c_str(), NULL, &dwType, NULL, &nsize) == ERROR_SUCCESS)
+			{
+				/*
+				bool isExoticRegType = dwType == REG_NONE ||
+					dwType == REG_LINK ||
+					dwType == REG_RESOURCE_LIST ||
+					dwType == REG_FULL_RESOURCE_DESCRIPTOR ||
+					dwType == REG_RESOURCE_REQUIREMENTS_LIST;
+					*/
+
+				//if (isExoticRegType)
+				//{
+				type = dwType;
+				BYTE* buffer = new BYTE[nsize];
+				if (RegQueryValueExW(hKey, property.c_str(), NULL, &dwType, buffer, &nsize) == ERROR_SUCCESS)
+				{
+					type = dwType;
+					data = new char[nsize];
+					memcpy(data, buffer, nsize);
+					delete[] buffer;
+					datalen = nsize;
+					RegCloseKey(hKey);
+					return true;
+				}
+				delete[] buffer;
+				//}
+			}
+			RegCloseKey(hKey);
+		}
+		return false;
+	}
+	bool getAsByteArray(HKEY hive, string key, string property, char*& data, size_t& datalen, unsigned long& type, REGSAM redirection)
+	{
+		return getAsByteArray(hive, wstring_from_utf8(key), wstring_from_utf8(property), data, datalen, type, redirection);
+	}
+	bool getAsByteArray(HKEY hive, string key, string property, string& result, unsigned long& type, REGSAM redirection)
+	{
+		size_t len;
+		char* buffer;
+		bool ret = getAsByteArray(hive, wstring_from_utf8(key), wstring_from_utf8(property), buffer, len, type, redirection);
+		if (ret) result = string(buffer, len);
+		delete[] buffer;
+		return ret;
+	}
+	bool getAsByteArray(HKEY hive, wstring key, wstring property, string& result, unsigned long& type, REGSAM redirection)
+	{
+		size_t len;
+		char* buffer;
+		bool ret = getAsByteArray(hive, key, property, buffer, len, type, redirection);
+		if (ret) result = string(buffer, len);
+		delete[] buffer;
+		return ret;
+	}
+	string getAsBase64ByteArray(HKEY hive, string key, string property, string default_value, unsigned long& type, REGSAM redirection)
+	{
+		return getAsBase64ByteArray(hive, wstring_from_utf8(key), wstring_from_utf8(property), default_value, type, redirection);
+	}
+	string getAsBase64ByteArray(HKEY hive, wstring key, wstring property, string default_value, unsigned long& type, REGSAM redirection)
+	{
+		string ret = default_value;
+		char* buffer;
+		size_t datalen;
+		if (getAsByteArray(hive, key, property, buffer, datalen, type, redirection))
+		{
+			std::string s = b64encode(buffer, datalen);
+			delete[] buffer;
+			ret = s;
+		}
+		return ret;
+	}
+	bool setByteArray(HKEY hive, wstring key, wstring property, const char* const data, size_t datalen, unsigned long type, REGSAM redirection)
+	{
+		HKEY hKey;
+		if (RegOpenKeyExW(hive, key.c_str(), 0, KEY_WRITE | redirection, &hKey) == ERROR_SUCCESS)
+		{
+			RegSetValueExW(hKey, property.c_str(), NULL, type, (BYTE*)data, (DWORD)datalen);
+			RegCloseKey(hKey);
+			return true;
+		}
+		return false;
+	}
+	bool setByteArray(HKEY hive, string key, string property, const char* const data, size_t datalen, unsigned long type, REGSAM redirection)
+	{
+		return setByteArray(hive, wstring_from_utf8(key), wstring_from_utf8(property), data, datalen, type, redirection);
+	}
+	bool setByteArrayFromBase64(HKEY hive, string key, string property, string data, unsigned long type, REGSAM redirection)
+	{
+		string s = b64decode(data);
+		return setByteArray(hive, key, property, s.c_str(), s.length(), type, redirection);
+	}
+	bool setByteArrayFromBase64(HKEY hive, wstring key, wstring property, string data, unsigned long type, REGSAM redirection)
+	{
+		string s = b64decode(data);
+		return setByteArray(hive, key, property, s.c_str(), s.length(), type, redirection);
+	}
+
+
 
 
 	namespace remap {

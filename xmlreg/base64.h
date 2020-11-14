@@ -20,15 +20,24 @@ freely, subject to the following restrictions:
 
 /* modifications:
 	1. removed #ifndef/#define/#endif and replaced with #pragma once
+	2. added stl wrappers
 */
 
 #pragma once
 
+#include <string>
+
 #include <stdlib.h>
 
+//size_t get_buffer_size_for_encoding(size_t byte_length);
+//size_t get_buffer_size_for_decoding(size_t encoded_length);
 
-size_t get_buffer_size_for_encoding(size_t byte_length);
-size_t get_buffer_size_for_decoding(size_t encoded_length);
+// wrapper for stl string
+std::string b64encode(const char* data, size_t data_length);
+// wrapper for stl string
+std::string b64encode(std::string data);
+// wrapper for stl string
+std::string b64decode(std::string data);
 
 /*
 encodes 'plain' bytes as base64 into 'encoded', appending a null character at the end

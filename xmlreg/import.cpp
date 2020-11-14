@@ -93,16 +93,19 @@ void workOnProperty(HKEY hive, const wstring& key, REGSAM redirection, pugi::xml
 		break;
 	case REG_BINARY:
 		if (!winreg::setBinaryFromBase64(hive, key, name, utf8_from_wstring(svalue.as_string()), redirection))
-			wcout << "error: failed to write dword: " << name << ":" << svalue.as_string() << "\n\ton " << key;
+			wcout << "error: failed to write binary: " << name << ":" << svalue.as_string() << "\n\ton " << key;
 		break;
 
-	case REG_LINK:
-	case REG_RESOURCE_LIST:
-	case REG_FULL_RESOURCE_DESCRIPTOR:
-	case REG_RESOURCE_REQUIREMENTS_LIST:
+	//case REG_NONE:
+	//case REG_LINK:
+	//case REG_RESOURCE_LIST:
+	//case REG_FULL_RESOURCE_DESCRIPTOR:
+	//case REG_RESOURCE_REQUIREMENTS_LIST:
 	default:
-		wcout << "ignoring unsupported registry value type: "
-			<< stype << ", value name: " << name << "\n\ton: " << key << endl;
+		if (!winreg::setByteArrayFromBase64(hive, key, name, utf8_from_wstring(svalue.as_string()), type, redirection))
+			wcout << "error: failed to write " << utils::propTypeToString(type) << ": "
+				<< name << ":" << svalue.as_string() << "\n\ton " << key;
+		break;
 	}
 }
 

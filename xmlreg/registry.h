@@ -100,14 +100,24 @@ namespace winreg {
 	bool setQword(HKEY hive, std::wstring key, std::wstring property, long long number, REGSAM redirection = 0);
 
 	// binary
-	bool getBinary(HKEY hive, std::string key, std::string property, char*& data, size_t& datalen, REGSAM redirection = 0);
-	bool getBinary(HKEY hive, std::wstring key, std::wstring napropertyme, char*& data, size_t& datalen, REGSAM redirection = 0);
+	bool getBinary(HKEY hive, std::string key, std::string property, std::string& result, REGSAM redirection = 0);
+	bool getBinary(HKEY hive, std::wstring key, std::wstring property, std::string& result, REGSAM redirection = 0);
 	std::string getBinaryAsBase64(HKEY hive, std::string key, std::string property, std::string default_value, REGSAM redirection = 0);
 	std::string getBinaryAsBase64(HKEY hive, std::wstring key, std::wstring property, std::string default_value, REGSAM redirection = 0);
 	bool setBinary(HKEY hive, std::string key, std::string property, const char* const data, size_t datalen, REGSAM redirection = 0);
 	bool setBinary(HKEY hive, std::wstring key, std::wstring property, const char* const data, size_t datalen, REGSAM redirection = 0);
 	bool setBinaryFromBase64(HKEY hive, std::string key, std::string property, std::string data, REGSAM redirection = 0);
 	bool setBinaryFromBase64(HKEY hive, std::wstring key, std::wstring property, std::string data, REGSAM redirection = 0);
+
+	// other types
+	bool getAsByteArray(HKEY hive, std::wstring key, std::wstring property, std::string& result, unsigned long& type, REGSAM redirection = 0);
+	bool getAsByteArray(HKEY hive, std::string key, std::string property, std::string& result, unsigned long& type, REGSAM redirection = 0);
+	std::string getAsBase64ByteArray(HKEY hive, std::string key, std::string property, std::string default_value, unsigned long& type, REGSAM redirection = 0);
+	std::string getAsBase64ByteArray(HKEY hive, std::wstring key, std::wstring property, std::string default_value, unsigned long& type, REGSAM redirection = 0);
+	bool setByteArray(HKEY hive, std::wstring key, std::wstring property, const char* const data, size_t datalen, unsigned long type, REGSAM redirection = 0);
+	bool setByteArray(HKEY hive, std::string key, std::string property, const char* const data, size_t datalen, unsigned long type, REGSAM redirection = 0);
+	bool setByteArrayFromBase64(HKEY hive, std::string key, std::string property, std::string data, unsigned long type, REGSAM redirection = 0);
+	bool setByteArrayFromBase64(HKEY hive, std::wstring key, std::wstring property, std::string data, unsigned long type, REGSAM redirection = 0);
 
 	namespace remap {
 		bool start(HKEY sourceHive, HKEY targetHive, const std::string& targetKey, REGSAM redirection);
