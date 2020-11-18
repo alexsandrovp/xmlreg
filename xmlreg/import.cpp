@@ -44,6 +44,11 @@ void workOnProperty(HKEY hive, const wstring& key, REGSAM redirection, pugi::xml
 				<< "\n\t at " << key << endl;
 		else wcout << "warning: replacing existing value " << name << " with milti-string\n\t at " << key << endl;
 	}
+	else if (!winreg::keyExists(hive, key, redirection) && !winreg::createKey(hive, key, redirection))
+	{
+		wcout << "error: failed to create key\n\tat " << utils::redirectionToString(redirection) << key << endl;
+		return;
+	}
 
 	switch (type)
 	{
