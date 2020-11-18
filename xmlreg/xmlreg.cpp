@@ -59,11 +59,13 @@ int wmain(int argc, wchar_t* argv[])
 		}
 
 		bool success = false;
-		if (args.isImport()) success = import_reg(args.getFile());
+		if (args.isImport()) success = import_reg(args.getFile(), args.getUnattended());
 		else if (args.isExport())
 			success = export_reg(args.getFile(),
 				args.getInputHive(), args.getInputKey(), args.getInputRedirection(),
-				args.getOutputHive(), args.getOutputKey(), args.getOutputRedirection());
+				args.getOutputHive(), args.getOutputKey(), args.getOutputRedirection(),
+				args.getUnattended());
+		else if (args.isWipe()) success = wipe_reg(args.getFile());
 
 		if (success)
 		{
@@ -89,8 +91,8 @@ wstring errorToString(int error)
 	switch (error)
 	{
 	case ERROR_USAGE_TOO_FEW_ARGUMENTS: return L"too few arguments";
-	case ERROR_USAGE_IMPORT_AND_EXPORT: return L"cannot use --import and --export at the same time";
-	case ERROR_USAGE_NOIMPORT_AND_NOEXPORT: return L"must use either --import or --export";
+	case ERROR_USAGE_IMPORT_AND_EXPORT_AND_WIPE: return L"cannot use --import, --export and --wipe at the same time";
+	case ERROR_USAGE_NOIMPORT_AND_NOEXPORT_AND_NOWIPE: return L"must use either --import or --export -or --wipe";
 	case ERROR_USAGE_NO_FILE: return L"no file specified";
 	case ERROR_USAGE_PARAMETER_WITHOUT_SWITCH: return L"parameter without preceding switch";
 	case ERROR_USAGE_NO_INPUT_HIVE: return L"no input hive";

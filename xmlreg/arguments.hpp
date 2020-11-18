@@ -31,6 +31,9 @@ freely, subject to the following restrictions:
 class arguments
 {
 	bool import = false;
+	bool exprt = false;
+	bool wipe = false;
+	bool unattended = false;
 	int error_code = 0;
 
 	std::wstring file;
@@ -58,13 +61,23 @@ public:
 			std::wstring token = argv[i];
 			if (token.length() == 0) continue;
 			bool is_switch = current_switch.length() == 0 && token[0] == L'-';
-			if (is_switch) current_switch = token;
+			if (is_switch)
+			{
+				current_switch = token;
+				if (current_switch == L"-y" || current_switch == L"--unattended")
+				{
+					tokens[L"unattended"] = L"true";
+					current_switch = L"";
+				}
+			}
 			else
 			{
 				if (current_switch == L"-i" || current_switch == L"--import")
 					tokens[L"import"] = token;
 				else if (current_switch == L"-e" || current_switch == L"--export")
 					tokens[L"export"] = token;
+				else if (current_switch == L"-w" || current_switch == L"--wipe")
+					tokens[L"wipe"] = token;
 				else if (current_switch == L"-h" || current_switch == L"--hive")
 					tokens[L"hive"] = token;
 				else if (current_switch == L"-k" || current_switch == L"--key")
@@ -93,21 +106,25 @@ public:
 			}
 		}
 
+		unattended = tokens.find(L"unattended") != tokens.end();
+
 		bool hasImport = tokens.find(L"import") != tokens.end();
 		bool hasExport = tokens.find(L"export") != tokens.end();
-		if (hasImport && hasExport)
+		bool hasWipe = tokens.find(L"wipe") != tokens.end();
+		if ((hasImport && hasExport) || (hasImport && hasWipe) || (hasExport && hasWipe))
 		{
-			error_code = ERROR_USAGE_IMPORT_AND_EXPORT;
+			error_code = ERROR_USAGE_IMPORT_AND_EXPORT_AND_WIPE;
 			return;
 		}
-		if (!hasImport && !hasExport)
+		if (!hasImport && !hasExport && !hasWipe)
 		{
-			error_code = ERROR_USAGE_NOIMPORT_AND_NOEXPORT;
+			error_code = ERROR_USAGE_NOIMPORT_AND_NOEXPORT_AND_NOWIPE;
 			return;
 		}
 
 		if (hasImport) file = tokens[L"import"];
-		else file = tokens[L"export"];
+		else if (hasExport) file = tokens[L"export"];
+		else if (hasWipe) file = tokens[L"wipe"];
 
 		if (file.length() == 0) error_code = ERROR_USAGE_NO_FILE;
 
@@ -124,8 +141,10 @@ public:
 		bool hasOutRedir = tokens.find(L"output-redirection") != tokens.end();
 
 		import = hasImport;
+		exprt = hasExport;
+		wipe = hasWipe;
 
-		if (!import && !hasHive)
+		if (exprt && !hasHive)
 		{
 			if (!hasInHive)
 			{
@@ -170,17 +189,22 @@ public:
 		{
 			std::wcout << "importing from file " << file << std::endl << std::endl;
 		}
-		else
+		else if (exprt)
 		{
 			auto redirStr = utils::redirectionToString(input_redirection);
 			if (redirStr.length() == 0) redirStr = L"0";
 			std::wcout << "exporting to file " << file << "\nfrom (" << redirStr << ") "
 				<< utils::hiveToString(input_hive) << ":\\" << input_key << std::endl << std::endl;
 		}
+		else if (wipe)
+		{
+			std::wcout << "wiping contents of file " << file << std::endl;
+		}
 	}
 
-	bool isExport() { return !import; }
+	bool isExport() { return exprt; }
 	bool isImport() { return import; }
+	bool isWipe() { return wipe; }
 	std::wstring getFile() { return file; }
 
 	HKEY getInputHive() { return input_hive; }
@@ -190,6 +214,8 @@ public:
 	HKEY getOutputHive() { return output_hive; }
 	std::wstring getOutputKey() { return output_key; }
 	REGSAM getOutputRedirection() { return output_redirection; }
+
+	bool getUnattended() { return unattended; }
 
 	int getError()
 	{

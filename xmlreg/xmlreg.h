@@ -26,20 +26,22 @@ freely, subject to the following restrictions:
 
 #define EXCEPTION_CODE(error_code) system_error(error_code, generic_category())
 
-#define ERROR_USAGE_TOO_FEW_ARGUMENTS			1
-#define ERROR_USAGE_IMPORT_AND_EXPORT			2
-#define ERROR_USAGE_NOIMPORT_AND_NOEXPORT		3
-#define ERROR_USAGE_NO_FILE						4
-#define ERROR_USAGE_PARAMETER_WITHOUT_SWITCH	5
-#define ERROR_USAGE_NO_INPUT_HIVE				6
-#define ERROR_USAGE_NO_OUTPUT_HIVE				7
+#define ERROR_USAGE_TOO_FEW_ARGUMENTS					1
+#define ERROR_USAGE_IMPORT_AND_EXPORT_AND_WIPE			2
+#define ERROR_USAGE_NOIMPORT_AND_NOEXPORT_AND_NOWIPE	3
+#define ERROR_USAGE_NO_FILE								4
+#define ERROR_USAGE_PARAMETER_WITHOUT_SWITCH			5
+#define ERROR_USAGE_NO_INPUT_HIVE						6
+#define ERROR_USAGE_NO_OUTPUT_HIVE						7
 
 #define ERROR_GENERAL_FAILURE					100
 
-bool import_reg(std::wstring file);
+bool import_reg(std::wstring file, bool unattended);
+bool wipe_reg(std::wstring file);
 bool export_reg(std::wstring file,
 	HKEY input_hive, std::wstring input_key, REGSAM input_redirection,
-	HKEY output_hive, std::wstring output_key, REGSAM output_redirection);
+	HKEY output_hive, std::wstring output_key, REGSAM output_redirection,
+	bool unattended);
 
 std::wstring errorToString(int error);
 

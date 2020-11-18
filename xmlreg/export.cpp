@@ -127,7 +127,7 @@ void convertKey(HKEY hive, const wstring& key, REGSAM redirection, pugi::xml_nod
 	}
 }
 
-bool export_reg(wstring file, HKEY input_hive, wstring input_key, REGSAM input_redirection, HKEY output_hive, wstring output_key, REGSAM output_redirection)
+bool export_reg(wstring file, HKEY input_hive, wstring input_key, REGSAM input_redirection, HKEY output_hive, wstring output_key, REGSAM output_redirection, bool unattended)
 {
 	if (winreg::keyExists(input_hive, input_key, input_redirection))
 	{
@@ -139,12 +139,19 @@ bool export_reg(wstring file, HKEY input_hive, wstring input_key, REGSAM input_r
 
 		if (utils::isFile(file))
 		{
-			wstring option;
-			wcout << "file already exists, overwrite? (y/N) ";
-			wcin >> option;
-			transform(option.begin(), option.end(), option.begin(), tolower);
-			bool ok_to_go = option == L"1" || option == L"y" || option == L"yes" || option == L"true";
-			if (!ok_to_go) return false;
+			if (unattended)
+			{
+				wcout << "warning: overwritting " << file << endl;
+			}
+			else
+			{
+				wstring option;
+				wcout << "file already exists, overwrite? (y/N) ";
+				wcin >> option;
+				transform(option.begin(), option.end(), option.begin(), tolower);
+				bool ok_to_go = option == L"1" || option == L"y" || option == L"yes" || option == L"true";
+				if (!ok_to_go) return false;
+			}
 		}
 
 		pugi::xml_document doc;

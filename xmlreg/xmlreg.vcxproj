@@ -157,6 +157,7 @@
     <ClCompile Include="pugi\pugixml.cpp" />
     <ClCompile Include="registry.cpp" />
     <ClCompile Include="utils.cpp" />
+    <ClCompile Include="wipe.cpp" />
     <ClCompile Include="xmlreg.cpp" />
   </ItemGroup>
   <ItemGroup>

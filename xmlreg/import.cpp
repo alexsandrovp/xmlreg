@@ -133,7 +133,7 @@ void convertNode(HKEY hive, const wstring& key, REGSAM redirection, pugi::xml_no
 	}
 }
 
-bool import_reg(wstring file)
+bool import_reg(wstring file, bool unattended)
 {
 	pugi::xml_document doc;
 	auto parse_result = doc.load_file(file.c_str());
@@ -162,12 +162,15 @@ bool import_reg(wstring file)
 			bool ok_to_go = true;
 			if (winreg::keyExists(hive, key, redirection))
 			{
-				wstring option;
-				wcout << "warning: target key already exists, trees will be merged and some values might be overwritten"
-					<< endl << "continue? (y/N): ";
-				wcin >> option;
-				transform(option.begin(), option.end(), option.begin(), tolower);
-				ok_to_go = option == L"1" || option == L"y" || option == L"yes" || option == L"true";
+				wcout << "warning: target key already exists, trees will be merged and some values might be overwritten" << endl;
+				if (!unattended)
+				{
+					wstring option;
+					wcout << "continue? (y/N): ";
+					wcin >> option;
+					transform(option.begin(), option.end(), option.begin(), tolower);
+					ok_to_go = option == L"1" || option == L"y" || option == L"yes" || option == L"true";
+				}
 			}
 
 			if (ok_to_go)
