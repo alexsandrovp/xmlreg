@@ -23,6 +23,8 @@ freely, subject to the following restrictions:
 
 #include <pugixml.hpp>
 
+#include <map>
+#include <regex>
 #include <string>
 #include <sstream>
 #include <iostream>
@@ -30,11 +32,21 @@ freely, subject to the following restrictions:
 
 using namespace std;
 
-void workOnProperty(HKEY hive, const wstring& key, REGSAM redirection, pugi::xml_node& node)
+void workOnProperty(HKEY hive, const wstring& key, REGSAM redirection, const vector<pair<wregex, wstring>>& replacements, pugi::xml_node& node)
 {
 	wstring name = node.attribute(L"name").value();
 	wstring stype = node.attribute(L"type").value();
 	pugi::xml_text svalue = node.text();
+
+	if (replacements.size() > 0)
+	{
+		for (auto par : replacements)
+		{
+			wstring r = regex_replace(svalue.as_string(), par.first, par.second);
+			if (r != svalue.as_string()) svalue.set(r.c_str());
+		}
+	}
+	
 	DWORD type = utils::stringToPropType(stype);
 
 	if (winreg::propertyExists(hive, key, name, redirection))
@@ -114,27 +126,29 @@ void workOnProperty(HKEY hive, const wstring& key, REGSAM redirection, pugi::xml
 	}
 }
 
-void convertNode(HKEY hive, const wstring& key, REGSAM redirection, pugi::xml_node& node)
+void convertNode(HKEY hive, const wstring& key, REGSAM redirection, const vector<pair<wregex, wstring>>& replacements, pugi::xml_node& node)
 {
 	for (pugi::xml_node child : node.children())
 	{
 		wstring s = child.name();
 		if (s.length() == 0) continue;
-		if (s == L"value") workOnProperty(hive, key, redirection, child);
+		if (s == L"value") workOnProperty(hive, key, redirection, replacements, child);
 		else if (s == L"key")
 		{
 			s = child.attribute(L"name").value();
 			wstring subkey = key + L"\\" + s;
 			if (winreg::createKey(hive, subkey, redirection))
-				convertNode(hive, subkey, redirection, child);
+				convertNode(hive, subkey, redirection, replacements, child);
 			else wcout << "error: failed to create subkey: " << subkey << endl;
 		}
 		else wcout << "warning: ignoring unknown element " << s << endl;
 	}
 }
 
-bool import_reg(wstring file, bool unattended)
+bool import_reg(wstring file, map<wstring, wstring> replacements, bool unattended)
 {
+	std::wcout << "importing from file " << file << std::endl << std::endl;
+
 	pugi::xml_document doc;
 	auto parse_result = doc.load_file(file.c_str());
 	if (parse_result.status == pugi::status_ok)
@@ -168,19 +182,25 @@ bool import_reg(wstring file, bool unattended)
 					wstring option;
 					wcout << "continue? (y/N): ";
 					wcin >> option;
-					transform(option.begin(), option.end(), option.begin(), tolower);
+					transform(option.begin(), option.end(), option.begin(), ::tolower);
 					ok_to_go = option == L"1" || option == L"y" || option == L"yes" || option == L"true";
 				}
 			}
 
 			if (ok_to_go)
 			{
-				convertNode(hive, key, redirection, root);
+				vector<pair<wregex, wstring>> rgxmap;
+				for (auto repl : replacements)
+				{
+					pair<wregex, wstring> p(wregex(repl.first), repl.second);
+					rgxmap.push_back(p);
+				}
+				convertNode(hive, key, redirection, rgxmap, root);
 				return true;
 			}
 		}
 		else wcout << "error: root element is not 'fragment'" << endl;
 	}
-	else wcout << "error: " << parse_result.description();
+	else wcout << "error: " << parse_result.description() << endl;
 	return false;
 }

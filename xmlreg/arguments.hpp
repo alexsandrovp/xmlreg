@@ -43,6 +43,8 @@ class arguments
 	REGSAM input_redirection = 0, output_redirection = 0;
 	std::wstring input_key, output_key;
 
+	std::map<std::wstring, std::wstring> matches;
+
 public:
 	arguments(int argc, wchar_t* argv[])
 	{
@@ -52,18 +54,23 @@ public:
 			return;
 		}
 
-		std::wstring current_switch;
+		std::wstring current_switch, current_match;
 		std::map<std::wstring, std::wstring> tokens;
 		program_path = argv[0];
 
 		for (int i = 1; i < argc; ++i)
 		{
 			std::wstring token = argv[i];
-			if (token.length() == 0) continue;
 			bool is_switch = current_switch.length() == 0 && token[0] == L'-';
 			if (is_switch)
 			{
 				current_switch = token;
+				if ((current_match.length() == 0 && (current_switch == L"-rp" || current_switch == L"--replace"))
+					|| (current_match.length() > 0 && current_switch != L"-rp" && current_switch != L"--replace"))
+				{
+					error_code = ERROR_USAGE_NO_REPLACE_AFTER_MATCH;
+					return;
+				}
 				if (current_switch == L"-y" || current_switch == L"--unattended")
 				{
 					tokens[L"unattended"] = L"true";
@@ -96,6 +103,13 @@ public:
 					tokens[L"output-key"] = token;
 				else if (current_switch == L"-or" || current_switch == L"--output-redirection")
 					tokens[L"output-redirection"] = token;
+				else if (current_switch == L"-m" || current_switch == L"--match")
+					current_match = token;
+				else if (current_switch == L"-rp" || current_switch == L"--replace")
+				{
+					matches[current_match] = token;
+					current_match = L"";
+				}
 				else if (current_switch.length() == 0)
 				{
 					error_code = ERROR_USAGE_PARAMETER_WITHOUT_SWITCH;
@@ -184,22 +198,6 @@ public:
 
 		if (hasOutRedir) output_redirection = utils::stringToRedirection(tokens[L"output-redirection"]);
 		else if (hasRedir) output_redirection = utils::stringToRedirection(tokens[L"redirection"]);
-
-		if (import)
-		{
-			std::wcout << "importing from file " << file << std::endl << std::endl;
-		}
-		else if (exprt)
-		{
-			auto redirStr = utils::redirectionToString(input_redirection);
-			if (redirStr.length() == 0) redirStr = L"0";
-			std::wcout << "exporting to file " << file << "\nfrom (" << redirStr << ") "
-				<< utils::hiveToString(input_hive) << ":\\" << input_key << std::endl << std::endl;
-		}
-		else if (wipe)
-		{
-			std::wcout << "wiping contents of file " << file << std::endl;
-		}
 	}
 
 	bool isExport() { return exprt; }
@@ -216,6 +214,8 @@ public:
 	REGSAM getOutputRedirection() { return output_redirection; }
 
 	bool getUnattended() { return unattended; }
+
+	std::map<std::wstring, std::wstring> getReplacements() { return matches; }
 
 	int getError()
 	{

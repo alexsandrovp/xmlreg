@@ -59,7 +59,7 @@ int wmain(int argc, wchar_t* argv[])
 		}
 
 		bool success = false;
-		if (args.isImport()) success = import_reg(args.getFile(), args.getUnattended());
+		if (args.isImport()) success = import_reg(args.getFile(), args.getReplacements(), args.getUnattended());
 		else if (args.isExport())
 			success = export_reg(args.getFile(),
 				args.getInputHive(), args.getInputKey(), args.getInputRedirection(),
@@ -97,6 +97,7 @@ wstring errorToString(int error)
 	case ERROR_USAGE_PARAMETER_WITHOUT_SWITCH: return L"parameter without preceding switch";
 	case ERROR_USAGE_NO_INPUT_HIVE: return L"no input hive";
 	case ERROR_USAGE_NO_OUTPUT_HIVE: return L"no output hive";
+	case ERROR_USAGE_NO_REPLACE_AFTER_MATCH: return L"must use --replace after --match";
 	}
 
 	wstringstream ss;

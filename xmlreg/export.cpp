@@ -129,6 +129,9 @@ void convertKey(HKEY hive, const wstring& key, REGSAM redirection, pugi::xml_nod
 
 bool export_reg(wstring file, HKEY input_hive, wstring input_key, REGSAM input_redirection, HKEY output_hive, wstring output_key, REGSAM output_redirection, bool unattended)
 {
+	std::wcout << "exporting to file " << file << "\nfrom (" << utils::redirectionToString(input_redirection) << ") "
+		<< utils::hiveToString(input_hive) << ":\\" << input_key << std::endl << std::endl;
+
 	if (winreg::keyExists(input_hive, input_key, input_redirection))
 	{
 		if (utils::isDirectory(file))

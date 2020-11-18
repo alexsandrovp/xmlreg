@@ -51,25 +51,6 @@ void wipeNode(HKEY hive, const wstring& key, REGSAM redirection, pugi::xml_node&
 					wcout << "warning: failed to delete " << name << "\n\tfrom ("
 						<< utils::redirectionToString(redirection) << ") " << key << endl;
 				}
-				/*
-				if (name.length() > 0)
-				{
-					if (!winreg::deleteProperty(hive, key, name))
-					{
-						wcout << "warning: failed to delete " << name << "\n\tfrom ("
-							<< utils::redirectionToString(redirection) << ") " << key << endl;
-					}
-				}
-				else
-				{
-					// the 'default value' has only its contents erased
-					if (!winreg::setString(hive, key, name, L""))
-					{
-						wcout << "warning: failed to clear default value \n\tfrom ("
-							<< utils::redirectionToString(redirection) << ") " << key << endl;
-					}
-				}
-				*/
 			}
 			else if (isKey)
 			{
@@ -111,6 +92,8 @@ void wipeNode(HKEY hive, const wstring& key, REGSAM redirection, pugi::xml_node&
 
 bool wipe_reg(wstring file)
 {
+	std::wcout << "wiping from registry items defined in file " << file << std::endl;
+
 	pugi::xml_document doc;
 	auto parse_result = doc.load_file(file.c_str());
 	if (parse_result.status == pugi::status_ok)
@@ -145,6 +128,6 @@ bool wipe_reg(wstring file)
 		}
 		else wcout << "error: root element is not 'fragment'" << endl;
 	}
-	else wcout << "error: " << parse_result.description();
+	else wcout << "error: " << parse_result.description() << endl;
 	return false;
 }

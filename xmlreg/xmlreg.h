@@ -20,6 +20,7 @@ freely, subject to the following restrictions:
 
 #pragma once
 
+#include <map>
 #include <string>
 
 #include <windows.h>
@@ -33,10 +34,11 @@ freely, subject to the following restrictions:
 #define ERROR_USAGE_PARAMETER_WITHOUT_SWITCH			5
 #define ERROR_USAGE_NO_INPUT_HIVE						6
 #define ERROR_USAGE_NO_OUTPUT_HIVE						7
+#define ERROR_USAGE_NO_REPLACE_AFTER_MATCH				8
 
 #define ERROR_GENERAL_FAILURE					100
 
-bool import_reg(std::wstring file, bool unattended);
+bool import_reg(std::wstring file, std::map<std::wstring, std::wstring> replacements, bool unattended);
 bool wipe_reg(std::wstring file);
 bool export_reg(std::wstring file,
 	HKEY input_hive, std::wstring input_key, REGSAM input_redirection,

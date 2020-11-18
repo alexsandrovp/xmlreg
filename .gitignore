@@ -1,5 +1,6 @@
 .vs/
 _out/
 _temp/
+xmlreg/*.xml
 **.aps
 **.user

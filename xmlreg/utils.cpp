@@ -65,7 +65,7 @@ namespace utils {
 	HKEY stringToHive(wstring str)
 	{
 		wstring temp;
-		transform(str.begin(), str.end(), str.begin(), toupper);
+		transform(str.begin(), str.end(), str.begin(), ::toupper);
 		return winreg::splitHiveFromKey(str, temp);
 	}
 
