@@ -46,7 +46,7 @@ void wipeNode(HKEY hive, const wstring& key, REGSAM redirection, pugi::xml_node&
 			wstring name = child.attribute(L"name").value();
 			if (isValue)
 			{
-				if (!winreg::deleteProperty(hive, key, name))
+				if (!winreg::deleteProperty(hive, key, name, redirection))
 				{
 					wcout << "warning: failed to delete " << name << "\n\tfrom ("
 						<< utils::redirectionToString(redirection) << ") " << key << endl;
