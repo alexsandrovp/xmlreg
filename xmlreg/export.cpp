@@ -174,7 +174,7 @@ bool export_reg(wstring file, HKEY input_hive, wstring input_key, REGSAM input_r
 		{
 			auto root = doc.append_child(L"fragment");
 			root.append_attribute(L"hive").set_value(utils::hiveToString(output_hive).c_str());
-			root.append_attribute(L"key").set_value(output_key.c_str());
+			if (output_key.length() > 0) root.append_attribute(L"key").set_value(output_key.c_str());
 			if (output_redirection) root.append_attribute(L"redirection").set_value(utils::redirectionToString(output_redirection).c_str());
 			convertKey(input_hive, input_key, input_redirection, root);
 			if (doc.save_file(file.c_str(), L"\t", 1, pugi::encoding_utf8)) return true;
