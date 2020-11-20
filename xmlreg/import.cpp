@@ -32,7 +32,7 @@ freely, subject to the following restrictions:
 
 using namespace std;
 
-void workOnProperty(HKEY hive, const wstring& key, REGSAM redirection, const vector<pair<wregex, wstring>>& replacements, pugi::xml_node& node)
+int workOnProperty(HKEY hive, const wstring& key, REGSAM redirection, const vector<pair<wregex, wstring>>& replacements, pugi::xml_node& node)
 {
 	wstring name = node.attribute(L"name").value();
 	wstring stype = node.attribute(L"type").value();
@@ -59,18 +59,24 @@ void workOnProperty(HKEY hive, const wstring& key, REGSAM redirection, const vec
 	else if (!winreg::keyExists(hive, key, redirection) && !winreg::createKey(hive, key, redirection))
 	{
 		wcout << "error: failed to create key\n\tat " << utils::redirectionToString(redirection) << key << endl;
-		return;
+		return ERROR_XRIMPORT_CREATEKEY;
 	}
 
 	switch (type)
 	{
 	case REG_SZ:
 		if (!winreg::setString(hive, key, name, svalue.as_string(), redirection))
+		{
 			wcout << "error: failed to write string: " << name << ":" << svalue << "\n\ton " << key;
+			if (!xrerror_mode) return ERROR_XRIMPORT_SETPROPERTY;
+		}
 		break;
 	case REG_EXPAND_SZ:
 		if (!winreg::setExpandString(hive, key, name, svalue.as_string(), redirection))
-			wcout << "error: failed to write string: " << name << ":" << svalue << "\n\ton " << key;
+		{
+			wcout << "error: failed to write expand-string: " << name << ":" << svalue << "\n\ton " << key;
+			if (!xrerror_mode) return ERROR_XRIMPORT_SETPROPERTY;
+		}
 		break;
 	case REG_MULTI_SZ:
 	{
@@ -87,30 +93,45 @@ void workOnProperty(HKEY hive, const wstring& key, REGSAM redirection, const vec
 			list.push_back(svalue.as_string());
 		}
 		if (!winreg::setMultiString(hive, key, name, list, redirection))
+		{
 			wcout << "error: failed to write multi-string: " << name << ", length: " << list.size() << "\n\ton " << key;
+			if (!xrerror_mode) return ERROR_XRIMPORT_SETPROPERTY;
+		}
 	}
 		break;
 	case REG_QWORD:
 	{
 		if (!winreg::setQword(hive, key, name, svalue.as_llong(), redirection))
+		{
 			wcout << "error: failed to write qword: " << name << ":" << svalue.as_string() << "\n\ton " << key;
+			if (!xrerror_mode) return ERROR_XRIMPORT_SETPROPERTY;
+		}
 	}
 		break;
 	case REG_DWORD:
 	{
 		if (!winreg::setDword(hive, key, name, (long)svalue.as_llong(), redirection))
+		{
 			wcout << "error: failed to write dword: " << name << ":" << svalue.as_string() << "\n\ton " << key;
+			if (!xrerror_mode) return ERROR_XRIMPORT_SETPROPERTY;
+		}
 	}
 		break;
 	case REG_DWORD_BIG_ENDIAN:
 	{
 		if (!winreg::setDwordBE(hive, key, name, (long)svalue.as_llong(), redirection))
+		{
 			wcout << "error: failed to write dword-be: " << name << ":" << svalue.as_string() << "\n\ton " << key;
+			if (!xrerror_mode) return ERROR_XRIMPORT_SETPROPERTY;
+		}
 	}
 		break;
 	case REG_BINARY:
 		if (!winreg::setBinaryFromBase64(hive, key, name, utf8_from_wstring(svalue.as_string()), redirection))
+		{
 			wcout << "error: failed to write binary: " << name << ":" << svalue.as_string() << "\n\ton " << key;
+			if (!xrerror_mode) return ERROR_XRIMPORT_SETPROPERTY;
+		}
 		break;
 
 	//case REG_NONE:
@@ -120,34 +141,52 @@ void workOnProperty(HKEY hive, const wstring& key, REGSAM redirection, const vec
 	//case REG_RESOURCE_REQUIREMENTS_LIST:
 	default:
 		if (!winreg::setByteArrayFromBase64(hive, key, name, utf8_from_wstring(svalue.as_string()), type, redirection))
+		{
 			wcout << "error: failed to write " << utils::propTypeToString(type) << ": "
 				<< name << ":" << svalue.as_string() << "\n\ton " << key;
+			if (!xrerror_mode) return ERROR_XRIMPORT_SETPROPERTY;
+		}
 		break;
 	}
+
+	return 0;
 }
 
-void convertNode(HKEY hive, const wstring& key, REGSAM redirection, const vector<pair<wregex, wstring>>& replacements, pugi::xml_node& node)
+int convertNode(HKEY hive, const wstring& key, REGSAM redirection, const vector<pair<wregex, wstring>>& replacements, pugi::xml_node& node)
 {
+	int ret = 0;
 	for (pugi::xml_node child : node.children())
 	{
 		wstring s = child.name();
 		if (s.length() == 0) continue;
-		if (s == L"value") workOnProperty(hive, key, redirection, replacements, child);
+		if (s == L"value")
+		{
+			ret = workOnProperty(hive, key, redirection, replacements, child);
+			if (ret && !xrerror_mode) return ret;
+		}
 		else if (s == L"key")
 		{
 			s = child.attribute(L"name").value();
 			wstring subkey = key + L"\\" + s;
 			if (winreg::createKey(hive, subkey, redirection))
-				convertNode(hive, subkey, redirection, replacements, child);
-			else wcout << "error: failed to create subkey: " << subkey << endl;
+			{
+				ret = convertNode(hive, subkey, redirection, replacements, child);
+				if (ret && !xrerror_mode) return ret;
+			}
+			else
+			{
+				wcout << "error: failed to create key: " << subkey << endl;
+				if (!xrerror_mode) return ERROR_XRIMPORT_CREATEKEY;
+			}
 		}
 		else wcout << "warning: ignoring unknown element " << s << endl;
 	}
+	return ret;
 }
 
-bool import_reg(wstring file, map<wstring, wstring> replacements, bool unattended)
+int import_reg(wstring file, map<wstring, wstring> replacements, bool unattended)
 {
-	std::wcout << "importing from file " << file << std::endl << std::endl;
+	std::wcout << "importing from file " << file << std::endl;
 
 	pugi::xml_document doc;
 	auto parse_result = doc.load_file(file.c_str());
@@ -163,7 +202,7 @@ bool import_reg(wstring file, map<wstring, wstring> replacements, bool unattende
 			wstring aredir = root.attribute(L"redirection").value();
 
 			if (ahive.length() == 0)
-				wcout << "no hive, assuming HKCU" << endl;
+				wcout << "warning: no hive, assuming HKCU" << endl;
 
 			wstring key = akey;
 			HKEY hive = utils::stringToHive(ahive);
@@ -196,11 +235,19 @@ bool import_reg(wstring file, map<wstring, wstring> replacements, bool unattende
 					rgxmap.push_back(p);
 				}
 				convertNode(hive, key, redirection, rgxmap, root);
-				return true;
+				return 0;
 			}
 		}
-		else wcout << "error: root element is not 'fragment'" << endl;
+		else
+		{
+			wcout << "error: root element is not 'fragment'" << endl;
+			return ERROR_XRIMPORT_XMLSCHEMA;
+		}
 	}
-	else wcout << "error: " << parse_result.description() << endl;
-	return false;
+	else
+	{
+		wcout << "error: " << parse_result.description() << endl;
+		return ERROR_XRIMPORT_PARSEXML;
+	}
+	return ERROR_XRGENERAL_FAILURE;
 }

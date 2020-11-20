@@ -58,24 +58,24 @@ int wmain(int argc, wchar_t* argv[])
 			return args.getError();
 		}
 
-		bool success = false;
-		if (args.isImport()) success = import_reg(args.getFile(), args.getReplacements(), args.getUnattended());
+		int xrerror_code = false;
+		if (args.isImport()) xrerror_code = import_reg(args.getFile(), args.getReplacements(), args.getUnattended());
 		else if (args.isExport())
-			success = export_reg(args.getFile(),
+			xrerror_code = export_reg(args.getFile(),
 				args.getInputHive(), args.getInputKey(), args.getInputRedirection(),
 				args.getOutputHive(), args.getOutputKey(), args.getOutputRedirection(),
 				args.getUnattended());
-		else if (args.isWipe()) success = wipe_reg(args.getFile());
+		else if (args.isWipe()) xrerror_code = wipe_reg(args.getFile());
 
-		if (success)
+		if (!xrerror_code)
 		{
 			wcout << "completed successfully" << endl;
 			return 0;
 		}
 		
-		wcout << "failed" << endl;
+		wcout << "failed: " << errorToString(xrerror_code) << endl;
 
-		return ERROR_GENERAL_FAILURE;
+		return xrerror_code;
 		
 	}
 	catch (exception& ex)
@@ -90,14 +90,14 @@ wstring errorToString(int error)
 {
 	switch (error)
 	{
-	case ERROR_USAGE_TOO_FEW_ARGUMENTS: return L"too few arguments";
-	case ERROR_USAGE_IMPORT_AND_EXPORT_AND_WIPE: return L"cannot use --import, --export and --wipe at the same time";
-	case ERROR_USAGE_NOIMPORT_AND_NOEXPORT_AND_NOWIPE: return L"must use either --import or --export -or --wipe";
-	case ERROR_USAGE_NO_FILE: return L"no file specified";
-	case ERROR_USAGE_PARAMETER_WITHOUT_SWITCH: return L"parameter without preceding switch";
-	case ERROR_USAGE_NO_INPUT_HIVE: return L"no input hive";
-	case ERROR_USAGE_NO_OUTPUT_HIVE: return L"no output hive";
-	case ERROR_USAGE_NO_REPLACE_AFTER_MATCH: return L"must use --replace after --match";
+	case ERROR_XRUSAGE_TOO_FEW_ARGUMENTS: return L"too few arguments";
+	case ERROR_XRUSAGE_IMPORT_AND_EXPORT_AND_WIPE: return L"cannot use --import, --export and --wipe at the same time";
+	case ERROR_XRUSAGE_NOIMPORT_AND_NOEXPORT_AND_NOWIPE: return L"must use either --import or --export -or --wipe";
+	case ERROR_XRUSAGE_NO_FILE: return L"no file specified";
+	case ERROR_XRUSAGE_PARAMETER_WITHOUT_SWITCH: return L"parameter without preceding switch";
+	case ERROR_XRUSAGE_NO_INPUT_HIVE: return L"no input hive";
+	case ERROR_XRUSAGE_NO_OUTPUT_HIVE: return L"no output hive";
+	case ERROR_XRUSAGE_NO_REPLACE_AFTER_MATCH: return L"must use --replace after --match";
 	}
 
 	wstringstream ss;

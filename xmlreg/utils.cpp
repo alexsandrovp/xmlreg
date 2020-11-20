@@ -27,6 +27,8 @@ freely, subject to the following restrictions:
 
 using namespace std;
 
+int xrerror_mode = 0;
+
 namespace utils {
 
 	bool isWindows64()

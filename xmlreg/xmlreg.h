@@ -27,20 +27,38 @@ freely, subject to the following restrictions:
 
 #define EXCEPTION_CODE(error_code) system_error(error_code, generic_category())
 
-#define ERROR_USAGE_TOO_FEW_ARGUMENTS					1
-#define ERROR_USAGE_IMPORT_AND_EXPORT_AND_WIPE			2
-#define ERROR_USAGE_NOIMPORT_AND_NOEXPORT_AND_NOWIPE	3
-#define ERROR_USAGE_NO_FILE								4
-#define ERROR_USAGE_PARAMETER_WITHOUT_SWITCH			5
-#define ERROR_USAGE_NO_INPUT_HIVE						6
-#define ERROR_USAGE_NO_OUTPUT_HIVE						7
-#define ERROR_USAGE_NO_REPLACE_AFTER_MATCH				8
+#define ERROR_XRUSAGE_TOO_FEW_ARGUMENTS					1
+#define ERROR_XRUSAGE_IMPORT_AND_EXPORT_AND_WIPE		2
+#define ERROR_XRUSAGE_NOIMPORT_AND_NOEXPORT_AND_NOWIPE	3
+#define ERROR_XRUSAGE_NO_FILE							4
+#define ERROR_XRUSAGE_PARAMETER_WITHOUT_SWITCH			5
+#define ERROR_XRUSAGE_NO_INPUT_HIVE						6
+#define ERROR_XRUSAGE_NO_OUTPUT_HIVE					7
+#define ERROR_XRUSAGE_NO_REPLACE_AFTER_MATCH			8
 
-#define ERROR_GENERAL_FAILURE					100
+#define ERROR_XRGENERAL_FAILURE			100
 
-bool import_reg(std::wstring file, std::map<std::wstring, std::wstring> replacements, bool unattended);
-bool wipe_reg(std::wstring file);
-bool export_reg(std::wstring file,
+#define ERROR_XRIMPORT_PARSEXML			200
+#define ERROR_XRIMPORT_XMLSCHEMA		201
+#define ERROR_XRIMPORT_CREATEKEY		202
+#define ERROR_XRIMPORT_SETPROPERTY		203
+
+#define ERROR_XREXPORT_NOKEY			200
+#define ERROR_XREXPORT_FILEISDIRECTORY	201
+#define ERROR_XREXPORT_DONTOVERWRITE	202
+#define ERROR_XREXPORT_WRITEOUTPUT1		203
+#define ERROR_XREXPORT_WRITEOUTPUT2		204
+
+#define ERROR_XRWIPE_PARSEXML			400
+#define ERROR_XRWIPE_XMLSCHEMA			401
+#define ERROR_XRWIPE_DELETEKEY			402
+#define ERROR_XRWIPE_DELETEPROPERTY		403
+
+extern int xrerror_mode;
+
+int import_reg(std::wstring file, std::map<std::wstring, std::wstring> replacements, bool unattended);
+int wipe_reg(std::wstring file);
+int export_reg(std::wstring file,
 	HKEY input_hive, std::wstring input_key, REGSAM input_redirection,
 	HKEY output_hive, std::wstring output_key, REGSAM output_redirection,
 	bool unattended);

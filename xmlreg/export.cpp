@@ -33,7 +33,7 @@ freely, subject to the following restrictions:
 using namespace std;
 
 // recursive function
-void convertKey(HKEY hive, const wstring& key, REGSAM redirection, pugi::xml_node &node)
+int convertKey(HKEY hive, const wstring& key, REGSAM redirection, pugi::xml_node &node)
 {
 	wstringstream ss;
 
@@ -125,19 +125,21 @@ void convertKey(HKEY hive, const wstring& key, REGSAM redirection, pugi::xml_nod
 		if (key.length() == 0) convertKey(hive, subkey, redirection, elem);
 		else convertKey(hive, key + L"\\" + subkey, redirection, elem);
 	}
+
+	return 0;
 }
 
-bool export_reg(wstring file, HKEY input_hive, wstring input_key, REGSAM input_redirection, HKEY output_hive, wstring output_key, REGSAM output_redirection, bool unattended)
+int export_reg(wstring file, HKEY input_hive, wstring input_key, REGSAM input_redirection, HKEY output_hive, wstring output_key, REGSAM output_redirection, bool unattended)
 {
 	std::wcout << "exporting to file " << file << "\nfrom (" << utils::redirectionToString(input_redirection) << ") "
-		<< utils::hiveToString(input_hive) << ":\\" << input_key << std::endl << std::endl;
+		<< utils::hiveToString(input_hive) << ":\\" << input_key << std::endl;
 
 	if (winreg::keyExists(input_hive, input_key, input_redirection))
 	{
 		if (utils::isDirectory(file))
 		{
 			wcout << "error: path already exists and is a directory" << endl;
-			return false;
+			return ERROR_XREXPORT_FILEISDIRECTORY;
 		}
 
 		if (utils::isFile(file))
@@ -153,7 +155,7 @@ bool export_reg(wstring file, HKEY input_hive, wstring input_key, REGSAM input_r
 				wcin >> option;
 				transform(option.begin(), option.end(), option.begin(), tolower);
 				bool ok_to_go = option == L"1" || option == L"y" || option == L"yes" || option == L"true";
-				if (!ok_to_go) return false;
+				if (!ok_to_go) return ERROR_XREXPORT_DONTOVERWRITE;
 			}
 		}
 
@@ -167,7 +169,7 @@ bool export_reg(wstring file, HKEY input_hive, wstring input_key, REGSAM input_r
 		if (!doc.save_file(file.c_str(), L"\t", 1, pugi::encoding_utf8))
 		{
 			wcout << "error: failed to save output file" << endl;
-			return false;
+			return ERROR_XREXPORT_WRITEOUTPUT1;
 		}
 
 		try
@@ -176,17 +178,29 @@ bool export_reg(wstring file, HKEY input_hive, wstring input_key, REGSAM input_r
 			root.append_attribute(L"hive").set_value(utils::hiveToString(output_hive).c_str());
 			if (output_key.length() > 0) root.append_attribute(L"key").set_value(output_key.c_str());
 			if (output_redirection) root.append_attribute(L"redirection").set_value(utils::redirectionToString(output_redirection).c_str());
-			convertKey(input_hive, input_key, input_redirection, root);
-			if (doc.save_file(file.c_str(), L"\t", 1, pugi::encoding_utf8)) return true;
-			else wcout << "error: failed to save output file (second attempt)" << endl;
+			int r = convertKey(input_hive, input_key, input_redirection, root);
+			if (r && !xrerror_mode)
+			{
+				DeleteFileW(file.c_str());
+				return r;
+			}
+			if (!doc.save_file(file.c_str(), L"\t", 1, pugi::encoding_utf8))
+			{
+				wcout << "error: failed to save output file (second attempt)" << endl;
+				return ERROR_XREXPORT_WRITEOUTPUT2;
+			}
+			return 0;
 		}
 		catch (...)
 		{
 			DeleteFileW(file.c_str());
 			throw;
 		}
-		
 	}
-	else wcout << "error: input key does not exist" << endl;
-	return false;
+	else
+	{
+		wcout << "error: input key does not exist" << endl;
+		return ERROR_XREXPORT_NOKEY;
+	}
+	return ERROR_XRGENERAL_FAILURE;
 }

@@ -50,7 +50,7 @@ public:
 	{
 		if (argc < 3)
 		{
-			error_code = ERROR_USAGE_TOO_FEW_ARGUMENTS;
+			error_code = ERROR_XRUSAGE_TOO_FEW_ARGUMENTS;
 			return;
 		}
 
@@ -68,7 +68,7 @@ public:
 				if ((current_match.length() == 0 && (current_switch == L"-rp" || current_switch == L"--replace"))
 					|| (current_match.length() > 0 && current_switch != L"-rp" && current_switch != L"--replace"))
 				{
-					error_code = ERROR_USAGE_NO_REPLACE_AFTER_MATCH;
+					error_code = ERROR_XRUSAGE_NO_REPLACE_AFTER_MATCH;
 					return;
 				}
 				if (current_switch == L"-y" || current_switch == L"--unattended")
@@ -112,7 +112,7 @@ public:
 				}
 				else if (current_switch.length() == 0)
 				{
-					error_code = ERROR_USAGE_PARAMETER_WITHOUT_SWITCH;
+					error_code = ERROR_XRUSAGE_PARAMETER_WITHOUT_SWITCH;
 					return;
 				}
 
@@ -127,12 +127,12 @@ public:
 		bool hasWipe = tokens.find(L"wipe") != tokens.end();
 		if ((hasImport && hasExport) || (hasImport && hasWipe) || (hasExport && hasWipe))
 		{
-			error_code = ERROR_USAGE_IMPORT_AND_EXPORT_AND_WIPE;
+			error_code = ERROR_XRUSAGE_IMPORT_AND_EXPORT_AND_WIPE;
 			return;
 		}
 		if (!hasImport && !hasExport && !hasWipe)
 		{
-			error_code = ERROR_USAGE_NOIMPORT_AND_NOEXPORT_AND_NOWIPE;
+			error_code = ERROR_XRUSAGE_NOIMPORT_AND_NOEXPORT_AND_NOWIPE;
 			return;
 		}
 
@@ -140,7 +140,7 @@ public:
 		else if (hasExport) file = tokens[L"export"];
 		else if (hasWipe) file = tokens[L"wipe"];
 
-		if (file.length() == 0) error_code = ERROR_USAGE_NO_FILE;
+		if (file.length() == 0) error_code = ERROR_XRUSAGE_NO_FILE;
 
 		bool hasHive = tokens.find(L"hive") != tokens.end();
 		bool hasKey = tokens.find(L"key") != tokens.end();
@@ -162,12 +162,12 @@ public:
 		{
 			if (!hasInHive)
 			{
-				error_code = ERROR_USAGE_NO_INPUT_HIVE;
+				error_code = ERROR_XRUSAGE_NO_INPUT_HIVE;
 				return;
 			}
 			if (!hasOutHive)
 			{
-				error_code = ERROR_USAGE_NO_OUTPUT_HIVE;
+				error_code = ERROR_XRUSAGE_NO_OUTPUT_HIVE;
 				return;
 			}
 		}

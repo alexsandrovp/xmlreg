@@ -30,67 +30,71 @@ freely, subject to the following restrictions:
 
 using namespace std;
 
-void wipeNode(HKEY hive, const wstring& key, REGSAM redirection, pugi::xml_node& node)
+int wipeNode(HKEY hive, const wstring& key, REGSAM redirection, pugi::xml_node& node)
 {
-	if (winreg::keyExists(hive, key, redirection))
+	if (!winreg::keyExists(hive, key, redirection)) return 0;
+	
+	auto properties = winreg::enumerateProperties(hive, key, redirection);
+	auto subkeys = winreg::enumerateSubkeys(hive, key, redirection);
+
+	for (pugi::xml_node child : node.children())
 	{
-		auto properties = winreg::enumerateProperties(hive, key, redirection);
-		auto subkeys = winreg::enumerateSubkeys(hive, key, redirection);
-
-		for (pugi::xml_node child : node.children())
+		wstring elemname = child.name();
+		if (elemname.length() == 0) continue;
+		bool isKey = elemname == L"key";
+		bool isValue = !isKey && elemname == L"value";
+		wstring name = child.attribute(L"name").value();
+		if (isValue)
 		{
-			wstring elemname = child.name();
-			if (elemname.length() == 0) continue;
-			bool isKey = elemname == L"key";
-			bool isValue = !isKey && elemname == L"value";
-			wstring name = child.attribute(L"name").value();
-			if (isValue)
+			if (!winreg::deleteProperty(hive, key, name, redirection))
 			{
-				if (!winreg::deleteProperty(hive, key, name, redirection))
-				{
-					wcout << "warning: failed to delete " << name << "\n\tfrom ("
-						<< utils::redirectionToString(redirection) << ") " << key << endl;
-				}
-			}
-			else if (isKey)
-			{
-				wstring subkey = key + L"\\" + name;
-				wipeNode(hive, subkey, redirection, child);
-			}
-			else wcout << "warning: ignoring unknown element " << elemname << endl;
-		}
-
-		properties = winreg::enumerateProperties(hive, key, redirection);
-		bool kill = properties.size() == 0;
-		if (!kill && properties.size() == 1 && properties[0].length() == 0)
-		{
-			string bytes;
-			unsigned long type;
-			if (winreg::getAsByteArray(hive, key, L"", bytes, type, redirection))
-				kill = bytes.length() == 0;
-			else kill = true;
-		}
-
-		if (kill)
-		{
-			subkeys = winreg::enumerateSubkeys(hive, key, redirection);
-			kill = subkeys.size() == 0;
-		}
-
-		if (kill)
-		{
-			if (!winreg::killKey(hive, key, redirection))
-			{
-				wcout << "warning: failed to delete empty key\n\tfrom ("
+				wcout << "warning: failed to delete " << name << "\n\tfrom ("
 					<< utils::redirectionToString(redirection) << ") " << key << endl;
+				if (!xrerror_mode) return ERROR_XRWIPE_DELETEPROPERTY;
 			}
 		}
-		else wcout << "warning: will not delete key\n\t(" << utils::redirectionToString(redirection) << ") " << key
-			<< "\n\tbecause it has contents that are not defined in xml" << endl;
+		else if (isKey)
+		{
+			wstring subkey = key + L"\\" + name;
+			int r = wipeNode(hive, subkey, redirection, child);
+			if (r && !xrerror_mode) return r;
+		}
+		else wcout << "warning: ignoring unknown element " << elemname << endl;
 	}
+
+	properties = winreg::enumerateProperties(hive, key, redirection);
+	bool kill = properties.size() == 0;
+	if (!kill && properties.size() == 1 && properties[0].length() == 0)
+	{
+		string bytes;
+		unsigned long type;
+		if (winreg::getAsByteArray(hive, key, L"", bytes, type, redirection))
+			kill = bytes.length() == 0;
+		else kill = true;
+	}
+
+	if (kill)
+	{
+		subkeys = winreg::enumerateSubkeys(hive, key, redirection);
+		kill = subkeys.size() == 0;
+	}
+
+	if (kill)
+	{
+		if (!winreg::killKey(hive, key, redirection))
+		{
+			wcout << "warning: failed to delete empty key\n\tfrom ("
+				<< utils::redirectionToString(redirection) << ") " << key << endl;
+			if (!xrerror_mode) return ERROR_XRWIPE_DELETEKEY;
+		}
+	}
+	else wcout << "warning: will not delete key\n\t(" << utils::redirectionToString(redirection) << ") " << key
+		<< "\n\tbecause it has contents that are not defined in xml" << endl;
+
+	return 0;
 }
 
-bool wipe_reg(wstring file)
+int wipe_reg(wstring file)
 {
 	std::wcout << "wiping from registry items defined in file " << file << std::endl;
 
@@ -123,11 +127,18 @@ bool wipe_reg(wstring file)
 				return true;
 			}
 
-			wipeNode(hive, key, redirection, root);
-			return true;
+			return wipeNode(hive, key, redirection, root);
 		}
-		else wcout << "error: root element is not 'fragment'" << endl;
+		else
+		{
+			wcout << "error: root element is not 'fragment'" << endl;
+			return ERROR_XRWIPE_XMLSCHEMA;
+		}
 	}
-	else wcout << "error: " << parse_result.description() << endl;
-	return false;
+	else
+	{
+		wcout << "error: " << parse_result.description() << endl;
+		return ERROR_XRWIPE_PARSEXML;
+	}
+	return ERROR_XRGENERAL_FAILURE;
 }
