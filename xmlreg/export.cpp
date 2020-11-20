@@ -33,7 +33,7 @@ freely, subject to the following restrictions:
 using namespace std;
 
 // recursive function
-int convertKey(HKEY hive, const wstring& key, REGSAM redirection, pugi::xml_node &node)
+int convertKey(HKEY hive, const wstring& key, REGSAM redirection, pugi::xml_node &node, bool skip_errors)
 {
 	wstringstream ss;
 
@@ -43,7 +43,7 @@ int convertKey(HKEY hive, const wstring& key, REGSAM redirection, pugi::xml_node
 		auto elem = node.append_child(L"value");
 		elem.append_attribute(L"name").set_value(property.c_str());
 		auto type = winreg::getPropertyType(hive, key, property, redirection);
-		elem.append_attribute(L"type").set_value(utils::propTypeToString(type).c_str());
+		elem.append_attribute(L"type").set_value(xrutils::propTypeToString(type).c_str());
 		switch (type)
 		{
 			case REG_QWORD:
@@ -122,27 +122,27 @@ int convertKey(HKEY hive, const wstring& key, REGSAM redirection, pugi::xml_node
 	{
 		auto elem = node.append_child(L"key");
 		elem.append_attribute(L"name").set_value(subkey.c_str());
-		if (key.length() == 0) convertKey(hive, subkey, redirection, elem);
-		else convertKey(hive, key + L"\\" + subkey, redirection, elem);
+		if (key.length() == 0) convertKey(hive, subkey, redirection, elem, skip_errors);
+		else convertKey(hive, key + L"\\" + subkey, redirection, elem, skip_errors);
 	}
 
 	return 0;
 }
 
-int export_reg(wstring file, HKEY input_hive, wstring input_key, REGSAM input_redirection, HKEY output_hive, wstring output_key, REGSAM output_redirection, bool unattended)
+int export_reg(wstring file, HKEY input_hive, wstring input_key, REGSAM input_redirection, HKEY output_hive, wstring output_key, REGSAM output_redirection, bool unattended, bool skip_errors)
 {
-	std::wcout << "exporting to file " << file << "\nfrom (" << utils::redirectionToString(input_redirection) << ") "
-		<< utils::hiveToString(input_hive) << ":\\" << input_key << std::endl;
+	std::wcout << "exporting to file " << file << "\nfrom (" << xrutils::redirectionToString(input_redirection) << ") "
+		<< xrutils::hiveToString(input_hive) << ":\\" << input_key << std::endl;
 
 	if (winreg::keyExists(input_hive, input_key, input_redirection))
 	{
-		if (utils::isDirectory(file))
+		if (xrutils::isDirectory(file))
 		{
 			wcout << "error: path already exists and is a directory" << endl;
 			return ERROR_XREXPORT_FILEISDIRECTORY;
 		}
 
-		if (utils::isFile(file))
+		if (xrutils::isFile(file))
 		{
 			if (unattended)
 			{
@@ -175,11 +175,11 @@ int export_reg(wstring file, HKEY input_hive, wstring input_key, REGSAM input_re
 		try
 		{
 			auto root = doc.append_child(L"fragment");
-			root.append_attribute(L"hive").set_value(utils::hiveToString(output_hive).c_str());
+			root.append_attribute(L"hive").set_value(xrutils::hiveToString(output_hive).c_str());
 			if (output_key.length() > 0) root.append_attribute(L"key").set_value(output_key.c_str());
-			if (output_redirection) root.append_attribute(L"redirection").set_value(utils::redirectionToString(output_redirection).c_str());
-			int r = convertKey(input_hive, input_key, input_redirection, root);
-			if (r && !xrerror_mode)
+			if (output_redirection) root.append_attribute(L"redirection").set_value(xrutils::redirectionToString(output_redirection).c_str());
+			int r = convertKey(input_hive, input_key, input_redirection, root, skip_errors);
+			if (r && !skip_errors)
 			{
 				DeleteFileW(file.c_str());
 				return r;

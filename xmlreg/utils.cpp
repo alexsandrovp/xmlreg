@@ -18,18 +18,18 @@ freely, subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 */
 
+#include "xmlreg.h"
 #include "registry.h"
 
 #include <string>
+#include <sstream>
 #include <algorithm>
 
 #include <Windows.h>
 
 using namespace std;
 
-int xrerror_mode = 0;
-
-namespace utils {
+namespace xrutils {
 
 	bool isWindows64()
 	{
@@ -120,5 +120,24 @@ namespace utils {
 		if (str == L"full-resource-descriptor") return REG_FULL_RESOURCE_DESCRIPTOR;
 		if (str == L"resource-requirements-list") return REG_RESOURCE_REQUIREMENTS_LIST;
 		return REG_NONE;
+	}
+
+	wstring errorToString(int error)
+	{
+		switch (error)
+		{
+		case ERROR_XRUSAGE_TOO_FEW_ARGUMENTS: return L"too few arguments";
+		case ERROR_XRUSAGE_IMPORT_AND_EXPORT_AND_WIPE: return L"cannot use --import, --export and --wipe at the same time";
+		case ERROR_XRUSAGE_NOIMPORT_AND_NOEXPORT_AND_NOWIPE: return L"must use either --import or --export -or --wipe";
+		case ERROR_XRUSAGE_NO_FILE: return L"no file specified";
+		case ERROR_XRUSAGE_PARAMETER_WITHOUT_SWITCH: return L"parameter without preceding switch";
+		case ERROR_XRUSAGE_NO_INPUT_HIVE: return L"no input hive";
+		case ERROR_XRUSAGE_NO_OUTPUT_HIVE: return L"no output hive";
+		case ERROR_XRUSAGE_NO_REPLACE_AFTER_MATCH: return L"must use --replace after --match";
+		}
+
+		wstringstream ss;
+		ss << "unspecified error (" << error << ")";
+		return ss.str();
 	}
 }

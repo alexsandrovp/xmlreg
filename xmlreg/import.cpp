@@ -32,7 +32,7 @@ freely, subject to the following restrictions:
 
 using namespace std;
 
-int workOnProperty(HKEY hive, const wstring& key, REGSAM redirection, const vector<pair<wregex, wstring>>& replacements, pugi::xml_node& node)
+int workOnProperty(HKEY hive, const wstring& key, REGSAM redirection, const vector<pair<wregex, wstring>>& replacements, pugi::xml_node& node, bool skip_errors)
 {
 	wstring name = node.attribute(L"name").value();
 	wstring stype = node.attribute(L"type").value();
@@ -47,18 +47,18 @@ int workOnProperty(HKEY hive, const wstring& key, REGSAM redirection, const vect
 		}
 	}
 	
-	DWORD type = utils::stringToPropType(stype);
+	DWORD type = xrutils::stringToPropType(stype);
 
 	if (winreg::propertyExists(hive, key, name, redirection))
 	{
 		if (type != REG_MULTI_SZ)
-			wcout << "warning: replacing existing value " << name << " with " << utils::propTypeToString(type) << " = " << svalue.as_string()
+			wcout << "warning: replacing existing value " << name << " with " << xrutils::propTypeToString(type) << " = " << svalue.as_string()
 				<< "\n\t at " << key << endl;
 		else wcout << "warning: replacing existing value " << name << " with milti-string\n\t at " << key << endl;
 	}
 	else if (!winreg::keyExists(hive, key, redirection) && !winreg::createKey(hive, key, redirection))
 	{
-		wcout << "error: failed to create key\n\tat " << utils::redirectionToString(redirection) << key << endl;
+		wcout << "error: failed to create key\n\tat " << xrutils::redirectionToString(redirection) << key << endl;
 		return ERROR_XRIMPORT_CREATEKEY;
 	}
 
@@ -68,14 +68,14 @@ int workOnProperty(HKEY hive, const wstring& key, REGSAM redirection, const vect
 		if (!winreg::setString(hive, key, name, svalue.as_string(), redirection))
 		{
 			wcout << "error: failed to write string: " << name << ":" << svalue << "\n\ton " << key;
-			if (!xrerror_mode) return ERROR_XRIMPORT_SETPROPERTY;
+			if (!skip_errors) return ERROR_XRIMPORT_SETPROPERTY;
 		}
 		break;
 	case REG_EXPAND_SZ:
 		if (!winreg::setExpandString(hive, key, name, svalue.as_string(), redirection))
 		{
 			wcout << "error: failed to write expand-string: " << name << ":" << svalue << "\n\ton " << key;
-			if (!xrerror_mode) return ERROR_XRIMPORT_SETPROPERTY;
+			if (!skip_errors) return ERROR_XRIMPORT_SETPROPERTY;
 		}
 		break;
 	case REG_MULTI_SZ:
@@ -95,7 +95,7 @@ int workOnProperty(HKEY hive, const wstring& key, REGSAM redirection, const vect
 		if (!winreg::setMultiString(hive, key, name, list, redirection))
 		{
 			wcout << "error: failed to write multi-string: " << name << ", length: " << list.size() << "\n\ton " << key;
-			if (!xrerror_mode) return ERROR_XRIMPORT_SETPROPERTY;
+			if (!skip_errors) return ERROR_XRIMPORT_SETPROPERTY;
 		}
 	}
 		break;
@@ -104,7 +104,7 @@ int workOnProperty(HKEY hive, const wstring& key, REGSAM redirection, const vect
 		if (!winreg::setQword(hive, key, name, svalue.as_llong(), redirection))
 		{
 			wcout << "error: failed to write qword: " << name << ":" << svalue.as_string() << "\n\ton " << key;
-			if (!xrerror_mode) return ERROR_XRIMPORT_SETPROPERTY;
+			if (!skip_errors) return ERROR_XRIMPORT_SETPROPERTY;
 		}
 	}
 		break;
@@ -113,7 +113,7 @@ int workOnProperty(HKEY hive, const wstring& key, REGSAM redirection, const vect
 		if (!winreg::setDword(hive, key, name, (long)svalue.as_llong(), redirection))
 		{
 			wcout << "error: failed to write dword: " << name << ":" << svalue.as_string() << "\n\ton " << key;
-			if (!xrerror_mode) return ERROR_XRIMPORT_SETPROPERTY;
+			if (!skip_errors) return ERROR_XRIMPORT_SETPROPERTY;
 		}
 	}
 		break;
@@ -122,7 +122,7 @@ int workOnProperty(HKEY hive, const wstring& key, REGSAM redirection, const vect
 		if (!winreg::setDwordBE(hive, key, name, (long)svalue.as_llong(), redirection))
 		{
 			wcout << "error: failed to write dword-be: " << name << ":" << svalue.as_string() << "\n\ton " << key;
-			if (!xrerror_mode) return ERROR_XRIMPORT_SETPROPERTY;
+			if (!skip_errors) return ERROR_XRIMPORT_SETPROPERTY;
 		}
 	}
 		break;
@@ -130,7 +130,7 @@ int workOnProperty(HKEY hive, const wstring& key, REGSAM redirection, const vect
 		if (!winreg::setBinaryFromBase64(hive, key, name, utf8_from_wstring(svalue.as_string()), redirection))
 		{
 			wcout << "error: failed to write binary: " << name << ":" << svalue.as_string() << "\n\ton " << key;
-			if (!xrerror_mode) return ERROR_XRIMPORT_SETPROPERTY;
+			if (!skip_errors) return ERROR_XRIMPORT_SETPROPERTY;
 		}
 		break;
 
@@ -142,9 +142,9 @@ int workOnProperty(HKEY hive, const wstring& key, REGSAM redirection, const vect
 	default:
 		if (!winreg::setByteArrayFromBase64(hive, key, name, utf8_from_wstring(svalue.as_string()), type, redirection))
 		{
-			wcout << "error: failed to write " << utils::propTypeToString(type) << ": "
+			wcout << "error: failed to write " << xrutils::propTypeToString(type) << ": "
 				<< name << ":" << svalue.as_string() << "\n\ton " << key;
-			if (!xrerror_mode) return ERROR_XRIMPORT_SETPROPERTY;
+			if (!skip_errors) return ERROR_XRIMPORT_SETPROPERTY;
 		}
 		break;
 	}
@@ -152,7 +152,7 @@ int workOnProperty(HKEY hive, const wstring& key, REGSAM redirection, const vect
 	return 0;
 }
 
-int convertNode(HKEY hive, const wstring& key, REGSAM redirection, const vector<pair<wregex, wstring>>& replacements, pugi::xml_node& node)
+int convertNode(HKEY hive, const wstring& key, REGSAM redirection, const vector<pair<wregex, wstring>>& replacements, pugi::xml_node& node, bool skip_errors)
 {
 	int ret = 0;
 	for (pugi::xml_node child : node.children())
@@ -161,8 +161,8 @@ int convertNode(HKEY hive, const wstring& key, REGSAM redirection, const vector<
 		if (s.length() == 0) continue;
 		if (s == L"value")
 		{
-			ret = workOnProperty(hive, key, redirection, replacements, child);
-			if (ret && !xrerror_mode) return ret;
+			ret = workOnProperty(hive, key, redirection, replacements, child, skip_errors);
+			if (ret && !skip_errors) return ret;
 		}
 		else if (s == L"key")
 		{
@@ -170,13 +170,13 @@ int convertNode(HKEY hive, const wstring& key, REGSAM redirection, const vector<
 			wstring subkey = key + L"\\" + s;
 			if (winreg::createKey(hive, subkey, redirection))
 			{
-				ret = convertNode(hive, subkey, redirection, replacements, child);
-				if (ret && !xrerror_mode) return ret;
+				ret = convertNode(hive, subkey, redirection, replacements, child, skip_errors);
+				if (ret && !skip_errors) return ret;
 			}
 			else
 			{
 				wcout << "error: failed to create key: " << subkey << endl;
-				if (!xrerror_mode) return ERROR_XRIMPORT_CREATEKEY;
+				if (!skip_errors) return ERROR_XRIMPORT_CREATEKEY;
 			}
 		}
 		else wcout << "warning: ignoring unknown element " << s << endl;
@@ -184,7 +184,7 @@ int convertNode(HKEY hive, const wstring& key, REGSAM redirection, const vector<
 	return ret;
 }
 
-int import_reg(wstring file, map<wstring, wstring> replacements, bool unattended)
+int import_reg(wstring file, map<wstring, wstring> replacements, bool unattended, bool skip_errors)
 {
 	std::wcout << "importing from file " << file << std::endl;
 
@@ -205,12 +205,12 @@ int import_reg(wstring file, map<wstring, wstring> replacements, bool unattended
 				wcout << "warning: no hive, assuming HKCU" << endl;
 
 			wstring key = akey;
-			HKEY hive = utils::stringToHive(ahive);
-			REGSAM redirection = utils::stringToRedirection(aredir);
+			HKEY hive = xrutils::stringToHive(ahive);
+			REGSAM redirection = xrutils::stringToRedirection(aredir);
 
 			wcout << "to ("
-				<< (redirection ? utils::redirectionToString(redirection) : L"0")
-				<< L"): " << utils::hiveToString(hive) << L":\\" << key << endl;
+				<< (redirection ? xrutils::redirectionToString(redirection) : L"0")
+				<< L"): " << xrutils::hiveToString(hive) << L":\\" << key << endl;
 
 			bool ok_to_go = true;
 			if (winreg::keyExists(hive, key, redirection))
@@ -234,8 +234,7 @@ int import_reg(wstring file, map<wstring, wstring> replacements, bool unattended
 					pair<wregex, wstring> p(wregex(repl.first), repl.second);
 					rgxmap.push_back(p);
 				}
-				convertNode(hive, key, redirection, rgxmap, root);
-				return 0;
+				return convertNode(hive, key, redirection, rgxmap, root, skip_errors);
 			}
 		}
 		else

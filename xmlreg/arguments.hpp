@@ -34,6 +34,7 @@ class arguments
 	bool exprt = false;
 	bool wipe = false;
 	bool unattended = false;
+	bool skip_err = false;
 	int error_code = 0;
 
 	std::wstring file;
@@ -74,6 +75,11 @@ public:
 				if (current_switch == L"-y" || current_switch == L"--unattended")
 				{
 					tokens[L"unattended"] = L"true";
+					current_switch = L"";
+				}
+				else if (current_switch == L"-se" || current_switch == L"--skip-errors")
+				{
+					tokens[L"skip-errors"] = L"true";
 					current_switch = L"";
 				}
 			}
@@ -120,6 +126,7 @@ public:
 			}
 		}
 
+		skip_err = tokens.find(L"skip-errors") != tokens.end();
 		unattended = tokens.find(L"unattended") != tokens.end();
 
 		bool hasImport = tokens.find(L"import") != tokens.end();
@@ -181,23 +188,23 @@ public:
 		if (hasRedir && hasInRedir && hasOutRedir)
 			std::wcout << "warning: ignoring --redirection because --input-redirection and --output-redirection were used" << std::endl;
 
-		if (hasInHive) input_hive = utils::stringToHive(tokens[L"input-hive"]);
-		else if (hasHive) input_hive = utils::stringToHive(tokens[L"hive"]);
+		if (hasInHive) input_hive = xrutils::stringToHive(tokens[L"input-hive"]);
+		else if (hasHive) input_hive = xrutils::stringToHive(tokens[L"hive"]);
 
 		if (hasInKey) input_key = tokens[L"input-key"];
 		else if (hasKey) input_key = tokens[L"key"];
 
-		if (hasInRedir) input_redirection = utils::stringToRedirection(tokens[L"input-redirection"]);
-		else if (hasRedir) input_redirection = utils::stringToRedirection(tokens[L"redirection"]);
+		if (hasInRedir) input_redirection = xrutils::stringToRedirection(tokens[L"input-redirection"]);
+		else if (hasRedir) input_redirection = xrutils::stringToRedirection(tokens[L"redirection"]);
 
-		if (hasOutHive) output_hive = utils::stringToHive(tokens[L"output-hive"]);
-		else if (hasHive) output_hive = utils::stringToHive(tokens[L"hive"]);
+		if (hasOutHive) output_hive = xrutils::stringToHive(tokens[L"output-hive"]);
+		else if (hasHive) output_hive = xrutils::stringToHive(tokens[L"hive"]);
 
 		if (hasOutKey) output_key = tokens[L"output-key"];
 		else if (hasKey) output_key = tokens[L"key"];
 
-		if (hasOutRedir) output_redirection = utils::stringToRedirection(tokens[L"output-redirection"]);
-		else if (hasRedir) output_redirection = utils::stringToRedirection(tokens[L"redirection"]);
+		if (hasOutRedir) output_redirection = xrutils::stringToRedirection(tokens[L"output-redirection"]);
+		else if (hasRedir) output_redirection = xrutils::stringToRedirection(tokens[L"redirection"]);
 	}
 
 	bool isExport() { return exprt; }
@@ -214,6 +221,7 @@ public:
 	REGSAM getOutputRedirection() { return output_redirection; }
 
 	bool getUnattended() { return unattended; }
+	bool getSkipErrors() { return skip_err; }
 
 	std::map<std::wstring, std::wstring> getReplacements() { return matches; }
 

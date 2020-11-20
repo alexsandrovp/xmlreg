@@ -30,7 +30,7 @@ freely, subject to the following restrictions:
 
 using namespace std;
 
-int wipeNode(HKEY hive, const wstring& key, REGSAM redirection, pugi::xml_node& node)
+int wipeNode(HKEY hive, const wstring& key, REGSAM redirection, pugi::xml_node& node, bool skip_errors)
 {
 	if (!winreg::keyExists(hive, key, redirection)) return 0;
 	
@@ -49,15 +49,15 @@ int wipeNode(HKEY hive, const wstring& key, REGSAM redirection, pugi::xml_node& 
 			if (!winreg::deleteProperty(hive, key, name, redirection))
 			{
 				wcout << "warning: failed to delete " << name << "\n\tfrom ("
-					<< utils::redirectionToString(redirection) << ") " << key << endl;
-				if (!xrerror_mode) return ERROR_XRWIPE_DELETEPROPERTY;
+					<< xrutils::redirectionToString(redirection) << ") " << key << endl;
+				if (!skip_errors) return ERROR_XRWIPE_DELETEPROPERTY;
 			}
 		}
 		else if (isKey)
 		{
 			wstring subkey = key + L"\\" + name;
-			int r = wipeNode(hive, subkey, redirection, child);
-			if (r && !xrerror_mode) return r;
+			int r = wipeNode(hive, subkey, redirection, child, skip_errors);
+			if (r && !skip_errors) return r;
 		}
 		else wcout << "warning: ignoring unknown element " << elemname << endl;
 	}
@@ -84,17 +84,17 @@ int wipeNode(HKEY hive, const wstring& key, REGSAM redirection, pugi::xml_node& 
 		if (!winreg::killKey(hive, key, redirection))
 		{
 			wcout << "warning: failed to delete empty key\n\tfrom ("
-				<< utils::redirectionToString(redirection) << ") " << key << endl;
-			if (!xrerror_mode) return ERROR_XRWIPE_DELETEKEY;
+				<< xrutils::redirectionToString(redirection) << ") " << key << endl;
+			if (!skip_errors) return ERROR_XRWIPE_DELETEKEY;
 		}
 	}
-	else wcout << "warning: will not delete key\n\t(" << utils::redirectionToString(redirection) << ") " << key
+	else wcout << "warning: will not delete key\n\t(" << xrutils::redirectionToString(redirection) << ") " << key
 		<< "\n\tbecause it has contents that are not defined in xml" << endl;
 
 	return 0;
 }
 
-int wipe_reg(wstring file)
+int wipe_reg(wstring file, bool unattended, bool skip_errors)
 {
 	std::wcout << "wiping from registry items defined in file " << file << std::endl;
 
@@ -115,19 +115,19 @@ int wipe_reg(wstring file)
 				wcout << "no hive, assuming HKCU" << endl;
 
 			wstring key = akey;
-			HKEY hive = utils::stringToHive(ahive);
-			REGSAM redirection = utils::stringToRedirection(aredir);
+			HKEY hive = xrutils::stringToHive(ahive);
+			REGSAM redirection = xrutils::stringToRedirection(aredir);
 
 			wcout << "from ("
-				<< (redirection ? utils::redirectionToString(redirection) : L"0")
-				<< L"): " << utils::hiveToString(hive) << L":\\" << key << endl;
+				<< (redirection ? xrutils::redirectionToString(redirection) : L"0")
+				<< L"): " << xrutils::hiveToString(hive) << L":\\" << key << endl;
 
 			if (!winreg::keyExists(hive, key, redirection))
 			{
 				return true;
 			}
 
-			return wipeNode(hive, key, redirection, root);
+			return wipeNode(hive, key, redirection, root, skip_errors);
 		}
 		else
 		{

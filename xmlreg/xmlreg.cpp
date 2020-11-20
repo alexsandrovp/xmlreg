@@ -38,7 +38,7 @@ using namespace std;
 void disallowWow()
 {
 #if !defined (_WIN64)
-	if (utils::isWindows64())
+	if (xrutils::isWindows64())
 		throw exception("wrong architecture");
 #endif
 }
@@ -54,18 +54,18 @@ int wmain(int argc, wchar_t* argv[])
 		arguments args(argc, argv);
 		if (args.getError())
 		{
-			wcout << "error: " << errorToString(args.getError()) << endl;
+			wcout << "error: " << xrutils::errorToString(args.getError()) << endl;
 			return args.getError();
 		}
 
 		int xrerror_code = false;
-		if (args.isImport()) xrerror_code = import_reg(args.getFile(), args.getReplacements(), args.getUnattended());
+		if (args.isImport()) xrerror_code = import_reg(args.getFile(), args.getReplacements(), args.getUnattended(), args.getSkipErrors());
 		else if (args.isExport())
 			xrerror_code = export_reg(args.getFile(),
 				args.getInputHive(), args.getInputKey(), args.getInputRedirection(),
 				args.getOutputHive(), args.getOutputKey(), args.getOutputRedirection(),
-				args.getUnattended());
-		else if (args.isWipe()) xrerror_code = wipe_reg(args.getFile());
+				args.getUnattended(), args.getSkipErrors());
+		else if (args.isWipe()) xrerror_code = wipe_reg(args.getFile(), args.getUnattended(), args.getSkipErrors());
 
 		if (!xrerror_code)
 		{
@@ -73,7 +73,7 @@ int wmain(int argc, wchar_t* argv[])
 			return 0;
 		}
 		
-		wcout << "failed: " << errorToString(xrerror_code) << endl;
+		wcout << "failed: " << xrutils::errorToString(xrerror_code) << endl;
 
 		return xrerror_code;
 		
@@ -86,21 +86,3 @@ int wmain(int argc, wchar_t* argv[])
 	return -1;
 }
 
-wstring errorToString(int error)
-{
-	switch (error)
-	{
-	case ERROR_XRUSAGE_TOO_FEW_ARGUMENTS: return L"too few arguments";
-	case ERROR_XRUSAGE_IMPORT_AND_EXPORT_AND_WIPE: return L"cannot use --import, --export and --wipe at the same time";
-	case ERROR_XRUSAGE_NOIMPORT_AND_NOEXPORT_AND_NOWIPE: return L"must use either --import or --export -or --wipe";
-	case ERROR_XRUSAGE_NO_FILE: return L"no file specified";
-	case ERROR_XRUSAGE_PARAMETER_WITHOUT_SWITCH: return L"parameter without preceding switch";
-	case ERROR_XRUSAGE_NO_INPUT_HIVE: return L"no input hive";
-	case ERROR_XRUSAGE_NO_OUTPUT_HIVE: return L"no output hive";
-	case ERROR_XRUSAGE_NO_REPLACE_AFTER_MATCH: return L"must use --replace after --match";
-	}
-
-	wstringstream ss;
-	ss << "unspecified error (" << error << ")";
-	return ss.str();
-}
