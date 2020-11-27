@@ -122,10 +122,7 @@ int wipe_reg(wstring file, bool unattended, bool skip_errors)
 				<< (redirection ? xrutils::redirectionToString(redirection) : L"0")
 				<< L"): " << xrutils::hiveToString(hive) << L":\\" << key << endl;
 
-			if (!winreg::keyExists(hive, key, redirection))
-			{
-				return true;
-			}
+			if (!winreg::keyExists(hive, key, redirection)) return 0;
 
 			return wipeNode(hive, key, redirection, root, skip_errors);
 		}
