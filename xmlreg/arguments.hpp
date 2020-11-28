@@ -39,6 +39,7 @@ class arguments
 
 	std::wstring file;
 	std::wstring program_path;
+	std::wstring com_dll;
 
 	HKEY input_hive = HKEY_CURRENT_USER, output_hive = HKEY_CURRENT_USER;
 	REGSAM input_redirection = 0, output_redirection = 0;
@@ -109,6 +110,8 @@ public:
 					tokens[L"output-key"] = token;
 				else if (current_switch == L"-or" || current_switch == L"--output-redirection")
 					tokens[L"output-redirection"] = token;
+				else if (current_switch == L"-cd" || current_switch == L"--com-dll")
+					tokens[L"com-dll"] = token;
 				else if (current_switch == L"-m" || current_switch == L"--match")
 					current_match = token;
 				else if (current_switch == L"-rp" || current_switch == L"--replace")
@@ -165,6 +168,9 @@ public:
 		exprt = hasExport;
 		wipe = hasWipe;
 
+		if (tokens.find(L"com-dll") != tokens.end())
+			com_dll = tokens[L"com-dll"];
+
 		if (exprt && !hasHive)
 		{
 			if (!hasInHive)
@@ -210,7 +216,9 @@ public:
 	bool isExport() { return exprt; }
 	bool isImport() { return import; }
 	bool isWipe() { return wipe; }
+
 	std::wstring getFile() { return file; }
+	std::wstring getComDll() { return com_dll; }
 
 	HKEY getInputHive() { return input_hive; }
 	std::wstring getInputKey() { return input_key; }

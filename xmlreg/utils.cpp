@@ -55,6 +55,32 @@ namespace xrutils {
 		return attributes != 0xFFFFFFFF && !(attributes & FILE_ATTRIBUTE_DIRECTORY);
 	}
 
+	wstring getFullPath(wstring relative, wstring &out_directory)
+	{
+		auto size = GetFullPathNameW(relative.c_str(), 0, nullptr, nullptr);
+
+		wchar_t* buffer = new wchar_t[size];
+		size = GetFullPathNameW(relative.c_str(), size, buffer, nullptr);
+		wstring ret(buffer, size);
+		delete[] buffer;
+
+		auto pos = ret.find_last_of(L'\\');
+		if (pos == wstring::npos) pos = ret.find_last_of(L'/');
+		if (pos == 0 || pos == wstring::npos) out_directory = L"";
+		else out_directory = ret.substr(0, pos);
+		return ret;
+	}
+
+	wstring getShorPath(wstring longpath)
+	{
+		auto size = GetShortPathNameW(longpath.c_str(), nullptr, 0);
+		wchar_t* buffer = new wchar_t[size];
+		size = GetShortPathNameW(longpath.c_str(), buffer, size);
+		wstring ret(buffer, size);
+		delete[] buffer;
+		return ret;
+	}
+
 	wstring hiveToString(HKEY hive)
 	{
 		if (hive == HKEY_LOCAL_MACHINE) return L"HKLM";

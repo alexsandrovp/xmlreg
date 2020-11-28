@@ -54,8 +54,11 @@ freely, subject to the following restrictions:
 #define ERROR_XRWIPE_DELETEKEY			402
 #define ERROR_XRWIPE_DELETEPROPERTY		403
 
-int import_reg(std::wstring file, std::map<std::wstring, std::wstring> replacements, bool unattended, bool skip_errors);
+int import_reg(std::wstring file, std::map<std::wstring, std::wstring> replacements,
+	std::wstring com_dll, bool unattended, bool skip_errors);
+
 int wipe_reg(std::wstring file, bool unattended, bool skip_errors);
+
 int export_reg(std::wstring file,
 	HKEY input_hive, std::wstring input_key, REGSAM input_redirection,
 	HKEY output_hive, std::wstring output_key, REGSAM output_redirection,
@@ -65,6 +68,8 @@ namespace xrutils {
 	bool isWindows64();
 	bool isDirectory(std::wstring file);
 	bool isFile(std::wstring file);
+	std::wstring getFullPath(std::wstring relative, std::wstring& out_directory);
+	std::wstring getShorPath(std::wstring longpath);
 	std::wstring hiveToString(HKEY hive);
 	HKEY stringToHive(std::wstring str);
 	std::wstring redirectionToString(REGSAM redirection);

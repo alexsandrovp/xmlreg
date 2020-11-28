@@ -184,7 +184,7 @@ int convertNode(HKEY hive, const wstring& key, REGSAM redirection, const vector<
 	return ret;
 }
 
-int import_reg(wstring file, map<wstring, wstring> replacements, bool unattended, bool skip_errors)
+int import_reg(wstring file, map<wstring, wstring> replacements, wstring com_dll, bool unattended, bool skip_errors)
 {
 	std::wcout << "importing from file " << file << std::endl;
 
@@ -231,8 +231,42 @@ int import_reg(wstring file, map<wstring, wstring> replacements, bool unattended
 				vector<pair<wregex, wstring>> rgxmap;
 				for (auto repl : replacements)
 				{
+					wcout << "replacing " << repl.first << " with " << repl.second << endl;
 					pair<wregex, wstring> p(wregex(repl.first), repl.second);
 					rgxmap.push_back(p);
+				}
+
+				if (com_dll.length() > 0)
+				{
+					// if this parameter was specified in command line, we create four special replacements:
+					// %dir% => is replaced with the parent path of com_dll
+					// %file% => is replaced with the value of com_dll
+					// %dir83% => is replaced with the short (dos 8.3) version of %dir%
+					// %file83% => is replaced with the short (dos 8.3) version of %file%
+
+					wstring directory;
+					wstring filepath = xrutils::getFullPath(com_dll, directory);
+					if (filepath.length() == 0 && directory.length() == 0)
+						wcout << "warning: invalid value for --com-dll, ignoring" << endl;
+					else
+					{
+						wstring file83 = xrutils::getShorPath(filepath);
+						wstring dir83 = xrutils::getShorPath(directory);
+
+						wcout << "replacing %dir% with " << directory << endl;
+						wcout << "replacing %dir83% with " << dir83 << endl;
+						wcout << "replacing %file% with " << filepath << endl;
+						wcout << "replacing %file83% with " << file83 << endl;
+
+						pair<wregex, wstring> p1(wregex(L"%dir%"), directory);
+						pair<wregex, wstring> p2(wregex(L"%dir83%"), dir83);
+						pair<wregex, wstring> p3(wregex(L"%file%"), filepath);
+						pair<wregex, wstring> p4(wregex(L"%file83%"), file83);
+						rgxmap.push_back(p1);
+						rgxmap.push_back(p2);
+						rgxmap.push_back(p3);
+						rgxmap.push_back(p4);
+					}
 				}
 				return convertNode(hive, key, redirection, rgxmap, root, skip_errors);
 			}

@@ -59,12 +59,16 @@ int wmain(int argc, wchar_t* argv[])
 		}
 
 		int xrerror_code = false;
-		if (args.isImport()) xrerror_code = import_reg(args.getFile(), args.getReplacements(), args.getUnattended(), args.getSkipErrors());
+
+		if (args.isImport()) xrerror_code = import_reg(args.getFile(), args.getReplacements(),
+			args.getComDll(), args.getUnattended(), args.getSkipErrors());
+
 		else if (args.isExport())
 			xrerror_code = export_reg(args.getFile(),
 				args.getInputHive(), args.getInputKey(), args.getInputRedirection(),
 				args.getOutputHive(), args.getOutputKey(), args.getOutputRedirection(),
 				args.getUnattended(), args.getSkipErrors());
+
 		else if (args.isWipe()) xrerror_code = wipe_reg(args.getFile(), args.getUnattended(), args.getSkipErrors());
 
 		if (!xrerror_code)
