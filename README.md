@@ -202,6 +202,8 @@ The tool will simply go through the `<key>` and `<value>` elements of the xml fi
 
 Note that `xmlreg` doesn't memorize in any way what was the original state of the registry before importing. If a value is overwritten during the import process, the original value will not be restored while using wipe mode. It will simply be removed.
 
+<br>
+
 ## File format
 
 The xml file is always saved with UTF-8 encoding without BOM. The xml declaration will indicate the encoding used. The file is always saved idented with tabs. Tabs are better than spaces !! ;-)
@@ -269,3 +271,27 @@ Values of type `expand-string` are treated as normal strings (env-vars are not e
 For example, if you write `%ProgramFiles%` (case sensitive) as a `REG_EXPAND_SZ` using `KEY_WOW64_32KEY` redirection by a 32-bits executable on 64-bits Windows, the actual value written is `%ProgramFiles(x86)%`. That ruins the process of exporting/reimporting, because the original data is not preserved. The only solution for this is to disallow WoW mode for this tool. (WoW stands for 'Windows on Windows' and it is what is used to run 32-bits programs on 64-bits Windows).
 
 Therefor, if you try to run a 32-bits build of `xmlreg.exe` on 64-bits Windows, you will get an error message. Only 64-bits builds run on 64-bits Windows.
+
+<br>
+
+## Note for powershell users
+
+Sometimes, you might need to use a command line with an empty string like this:
+
+```
+xmlreg.exe -h hklm -k "" -oh hkcu -ok "my backup"
+```
+
+But powershell will remove "" from the command line, resulting in the following call
+
+```
+xmlreg.exe -h hklm -k -oh hkcu -ok "my backup"
+```
+
+Which is invalid, because `--key` will be set to "-oh" (defaults to HKCU) and then `hkcu` is an invalid switch.
+
+To ensure powershell usese the correct command line, use `'""'`:
+
+```
+xmlreg.exe -h hklm -k '""' -oh hkcu -ok "my backup"
+```
