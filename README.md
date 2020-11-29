@@ -1,5 +1,5 @@
 # xmlreg
-A tool to convert windows registry trees to/from xml files
+A tool to convert windows registry trees to/from xml files.
 
 Modes of operation:
 
@@ -13,13 +13,13 @@ Options common to all modes:
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`-y`  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`--unattended`  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Assume yes on all queries
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Assume yes on all queries.
 
 <br>
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`-se`  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`--skip-errors`  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Don't abort on first error
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Don't abort on first error.
 
 <br>
 
@@ -37,13 +37,13 @@ The xml file is always required. In `import` and `wipe` modes, it is the input a
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`-rp`  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`--replace` < string >  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Replacement pattern for the preceding regex
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Replacement pattern for the preceding regex.
 
 <br>
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`-cd`  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`--com-dll` < path >  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Creates four special match/replace pairs
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Creates four special match/replace pairs.
 ```
 %file%      => replaced with the path given in this parameter
 %dir%       => replaced with the parent path of %file%
@@ -67,64 +67,67 @@ xmlreg.exe -i file.xml -cd c:\installdir\my-com-server.dll
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Imports the contents of file.xml into the registry, replacing:  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`%file%` with __c:\installdir\my-com-server.dll__  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`%dir%` with __c:\installdir__  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`%file83%` with __c:\instal~1\my-com~1.dll__  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`%dir83%` with __c:\instal~1__
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`%file83%` with __c:\instal\~1\my-com\~1.dll__  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`%dir83%` with __c:\instal\~1__
 
 <br>
 
 ## Export
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`-h`  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`--hive`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`--hive` < hive >  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Sets both the input and output hives. Can be one of the following values (case insensitive): __hklm__, __hkcu__, __hkcr__, __hku__
 
 <br>
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`-k`  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`--key`  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Sets both the input and output keys
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`--key` < key >  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Sets both the input and output keys.
 
 <br>
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`-r`  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`--redirection`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`--redirection` < wow-mode >  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Sets both the input and output wow redirection mode. Can be __0__, __32__ or __64__  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Using __32__ causes the program to add __KEY_WOW64_32KEY__ to the desired access rights (__REGSAM__) of [Win32 registry](#https://docs.microsoft.com/en-us/windows/win32/api/winreg/) function calls. __64__ is equivalent to __KEY_WOW64_64KEY__. Anything else is equivalent to __0__ (meaning Windows decides redirection based on the bitness of xmlreg.exe). See [Windows registry redirector](#https://docs.microsoft.com/en-us/windows/win32/winprog64/registry-redirector) to understand the rules
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Using __32__ causes the program to add __KEY_WOW64_32KEY__ to the desired access rights (__REGSAM__) of [Win32 registry](https://docs.microsoft.com/en-us/windows/win32/api/winreg/) function calls.  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;__64__ is equivalent to __KEY_WOW64_64KEY__.  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Anything else is equivalent to __0__ (meaning Windows decides redirection based on the bitness of xmlreg.exe).  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;See [Windows registry redirector](https://docs.microsoft.com/en-us/windows/win32/winprog64/registry-redirector) to understand the rules.
 
 <br>
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`-oh`  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`--output-hive`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`--output-hive` < hive >  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Overrides the value set by `--hive` in the xml output.
 
 <br>
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`-ok`  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`--output-key`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`--output-key` < key >  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Overrides the value set by `--key` in the xml output.
 
 <br>
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`-or`  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`--output-redirection`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`--output-redirection` < wow-mode >  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Overrides the value set by `--redirection` in the xml output.
 
 <br>
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`-ih`  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`--input-hive`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`--input-hive` < hive >  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Overrides the value set by `--hive` when reading the registry.
 
 <br>
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`-ik`  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`--input-key`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`--input-key` < key >  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Overrides the value set by `--key` when reading the registry.
 
 <br>
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`-ir`  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`--input-redirection`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`--input-redirection` < wow-mode >  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Overrides the value set by `--redirection` when reading the registry.
 
 <br>
@@ -187,11 +190,23 @@ Switches starting with __--input__ and __--output-__ always take precedence over
 
 <br>
 
+## Wipe
+
+```
+xmlreg.exe --wipe file.xml
+```
+
+This mode is meant to be an `uninstallation` mode. After importing a file with `--import`, you can (partially) undo the changes in the registry by using wipe mode.
+
+The tool will simply go through the `<key>` and `<value>` elements of the xml file and remove them from the registry. `<key>` elements are only removed if they are left empty after the process. `<value>` elements are always removed.
+
+Note that `xmlreg` doesn't memorize in any way what was the original state of the registry before importing. If a value is overwritten during the import process, the original value will not be restored while using wipe mode. It will simply be removed.
+
 ## File format
 
 The xml file is always saved with UTF-8 encoding without BOM. The xml declaration will indicate the encoding used. The file is always saved idented with tabs. Tabs are better than spaces !! ;-)
 
-The root element is called `<fragment>` and its attributes indicate where that registry fragment must be imported
+The root element is called `<fragment>` and its attributes indicate where that registry fragment must be imported.
 
 ```xml
 <fragment hive="HKCU" key="Software\Classes\CLSID" redirection="32">
