@@ -1,31 +1,183 @@
 # xmlreg
 A tool to convert windows registry trees to/from xml files
 
+Modes of operation:
+
+```
+xmlreg.exe --export <file.xml> --hive <hive> [--key <key>] [--redirection <wow-mode>]
+xmlreg.exe --import <file.xml> [--match <regex> --replace <string>] [--com-dll <path>]
+xmlreg.exe --wipe <file.xml>
+```
+
+Options common to all modes:
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`-y`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`--unattended`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Assume yes on all queries
+
+<br>
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`-se`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`--skip-errors`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Don't abort on first error
+
+<br>
+
+The xml file is always required. In `import` and `wipe` modes, it is the input and the Windows Registry is the output. In `export` mode, it is the other way around. See [file format](#File-format).
+
 <br>
 
 ## Import
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`-m`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`--match` < regex >  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Regex to search and replace. Must be followed by `--replace`. Whenever this regex pattern is found in a `string` value in the xml file, it is replaced in the Windows Registry by its companion replace pattern.
+
+<br>
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`-rp`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`--replace` < string >  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Replacement pattern for the preceding regex
+
+<br>
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`-cd`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`--com-dll` < path >  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Creates four special match/replace pairs
+```
+%file%      => replaced with the path given in this parameter
+%dir%       => replaced with the parent path of %file%
+%file83%    => same as %file%, but in dos 8.3 format
+%dir83%     => same as %dir%, but in dos 8.3 format
+```
+
+<br>
+
+Examples:
 ```
 xmlreg.exe --import file.xml
-xmlreg.exe -i file.xml
 ```
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Imports the contents of file.xml into the registry.
+
+<br>
+
+```
+xmlreg.exe -i file.xml -cd c:\installdir\my-com-server.dll
+```
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Imports the contents of file.xml into the registry, replacing:  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`%file%` with __c:\installdir\my-com-server.dll__  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`%dir%` with __c:\installdir__  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`%file83%` with __c:\instal~1\my-com~1.dll__  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`%dir83%` with __c:\instal~1__
+
+<br>
 
 ## Export
-```
-xmlreg.exe --export file.xml --hive hklm --key Software --redirection 32
-xmlreg.exe -e file.xml -h hklm -k Software -r 32
-```
-In this example, we are exporting the contents of __HKEY_LOCAL_MACHINE\Software__ to __file.xml__
-Since we specified 32 bits redirection, this command actually exports __HKEY_LOCAL_MACHINE\Software\Wow6432Node__ on 64-bits Windows, and __HKEY_LOCAL_MACHINE\Software__ on 32-bits Windows
 
-The tool also supports the switches __--output-hive__ (-oh), __--output-key__ (-ok) and __--output-redirection__ (-or), to save different path directions inside the exported file.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`-h`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`--hive`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Sets both the input and output hives. Can be one of the following values (case insensitive): __hklm__, __hkcu__, __hkcr__, __hku__
+
+<br>
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`-k`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`--key`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Sets both the input and output keys
+
+<br>
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`-r`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`--redirection`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Sets both the input and output wow redirection mode. Can be __0__, __32__ or __64__  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Using __32__ causes the program to add __KEY_WOW64_32KEY__ to the desired access rights (__REGSAM__) of [Win32 registry](#https://docs.microsoft.com/en-us/windows/win32/api/winreg/) function calls. __64__ is equivalent to __KEY_WOW64_64KEY__. Anything else is equivalent to __0__ (meaning Windows decides redirection based on the bitness of xmlreg.exe). See [Windows registry redirector](#https://docs.microsoft.com/en-us/windows/win32/winprog64/registry-redirector) to understand the rules
+
+<br>
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`-oh`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`--output-hive`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Overrides the value set by `--hive` in the xml output.
+
+<br>
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`-ok`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`--output-key`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Overrides the value set by `--key` in the xml output.
+
+<br>
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`-or`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`--output-redirection`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Overrides the value set by `--redirection` in the xml output.
+
+<br>
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`-ih`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`--input-hive`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Overrides the value set by `--hive` when reading the registry.
+
+<br>
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`-ik`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`--input-key`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Overrides the value set by `--key` when reading the registry.
+
+<br>
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`-ir`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`--input-redirection`  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Overrides the value set by `--redirection` when reading the registry.
+
+<br>
+
+Examples:
+
+```
+xmlreg.exe --export file.xml --hive hklm
+```
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Exports the entire hive __HKEY_LOCAL_MACHINE__ to __file.xml__
+
+<br>
+
+```
+xmlreg.exe -e file.xml -h hklm -k Software\Windows
+```
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Exports the key "Software\Windows" from __HKEY_LOCAL_MACHINE__ to __file.xml__. Lets the bitness of xmlreg decide redirection.
+
+<br>
+
+```
+xmlreg.exe -e file.xml -h hklm -k Software\Windows -r 32
+```
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Exports to __file.xml__ the contents of one of these keys from __HKEY_LOCAL_MACHINE__:  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "Software\Windows" from 32 bits Windows  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "Software\Wow6432Node\Windows" from 64 bits Windows  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; It creates an attribute `redirection="32"` in the xml output to enforce this redirection when importing.
+
+<br>
+
+```
+xmlreg.exe -e file.xml -h hklm -k Software\Windows -r 64
+```
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Exports the key __HKEY_LOCAL_MACHINE\Software\Windows__ to __file.xml__, regardless of the Windows and xmlreg bitness.  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; It creates an attribute `redirection="64"` in the xml output to enforce this redirection when importing.
+
+<br>
+
+```
+xmlreg.exe -e file.xml -h hklm -k Software\Windows -r 64 -or 0
+```
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Exports the key __HKEY_LOCAL_MACHINE\Software\Windows__ to __file.xml__, regardless of the Windows and xmlreg bitness.  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; It doesn't create an attribute `redirection` in the xml output, and the import redirection will be decided by Windows based on the bitness of the xmlreg used to import.
+
+<br>
 
 ```
 xmlreg.exe -e file.xml -h hklm -k Software -r 64 -oh hkcu -ok MyBackup
 ```
 
-In this example, the contents of __HKEY_LOCAL_MACHINE\Software__ are exported to file.xml. When reimported, this file will recreate everything inside __HKEY_CURRENT_USER\MyBackup__
+In this example, the contents of __HKEY_LOCAL_MACHINE\Software__ are exported to file.xml. When reimported, this file causes xmlreg to recreate everything inside __HKEY_CURRENT_USER\MyBackup__
 
-Alternatively, we could have used the switches __--input-hive__ (-ih), __--input-key__ (-ik) and __--input-redirection__ (-ir) to achieve the same results.
+Alternatively, we could have used the switches __--input-hive__, __--input-key__ and __--input-redirection__ to achieve the same results.
 
 ```
 xmlreg.exe -e file.xml -ih hklm -ik Software -ir 64 -h hkcu -k MyBackup
@@ -33,7 +185,6 @@ xmlreg.exe -e file.xml -ih hklm -ik Software -ir 64 -h hkcu -k MyBackup
 
 Switches starting with __--input__ and __--output-__ always take precedence over __--hive__, __--key__ and __--redirection__
 
-<br>
 <br>
 
 ## File format
