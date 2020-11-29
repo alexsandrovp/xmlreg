@@ -290,7 +290,7 @@ xmlreg.exe -h hklm -k -oh hkcu -ok "my backup"
 
 Which is invalid, because `--key` will be set to "-oh" (defaults to HKCU) and then `hkcu` is an invalid switch.
 
-To ensure powershell usese the correct command line, use `'""'`:
+To ensure powershell sets the correct command line, use `'""'`:
 
 ```
 xmlreg.exe -h hklm -k '""' -oh hkcu -ok "my backup"
