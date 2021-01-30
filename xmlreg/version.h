@@ -19,5 +19,5 @@ freely, subject to the following restrictions:
 */
 
 #pragma once
-#define TOOL_FILEVERSION 0,0,1,0
-#define TOOL_FILEVERSION_STR "0.0.1"
+#define TOOL_FILEVERSION 0,0,2,0
+#define TOOL_FILEVERSION_STR "0.0.2"
