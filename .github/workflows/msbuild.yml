@@ -33,6 +33,10 @@ jobs:
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: msbuild /m /p:"Configuration=Release;Platform=x86" ${{env.SOLUTION_FILE_PATH}}
     
+    - name: Print hashes
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: dir -Recurse -Include *.exe,*.pdb | Get-FileHash
+    
     - name: 'Upload x64 exe'
       uses: actions/upload-artifact@v2
       with:
