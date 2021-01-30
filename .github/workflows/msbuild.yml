@@ -25,8 +25,38 @@ jobs:
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: nuget restore ${{env.SOLUTION_FILE_PATH}}
 
-    - name: Build
+    - name: Buildx64
       working-directory: ${{env.GITHUB_WORKSPACE}}
-      # Add additional options to the MSBuild command line here (like platform or verbosity level).
-      # See https://docs.microsoft.com/visualstudio/msbuild/msbuild-command-line-reference
-      run: msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_FILE_PATH}}
+      run: msbuild /m /p:"Configuration=Release;Platform=x64" ${{env.SOLUTION_FILE_PATH}}
+
+    - name: Buildx86
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: msbuild /m /p:"Configuration=Release;Platform=x86" ${{env.SOLUTION_FILE_PATH}}
+    
+    - name: 'Upload x64 exe'
+      uses: actions/upload-artifact@v2
+      with:
+        name: xmlreg64.exe
+        path: _out/Release/x64/xmlreg64.exe
+        retention-days: 1
+        
+    - name: 'Upload x64 pdb'
+      uses: actions/upload-artifact@v2
+      with:
+        name: xmlreg64.pdb
+        path: _out/Release/x64/xmlreg64.pdb
+        retention-days: 1
+        
+    - name: 'Upload x86 exe'
+      uses: actions/upload-artifact@v2
+      with:
+        name: xmlreg32.exe
+        path: _out/Release/x86/xmlreg32.exe
+        retention-days: 1
+        
+    - name: 'Upload x86 pdb'
+      uses: actions/upload-artifact@v2
+      with:
+        name: xmlreg32.pdb
+        path: _out/Release/x86/xmlreg32.pdb
+        retention-days: 1
