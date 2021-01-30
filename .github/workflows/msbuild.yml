@@ -35,7 +35,7 @@ jobs:
     
     - name: Print hashes
       working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: dir -Recurse -Include *.exe,*.pdb | Get-FileHash
+      run: dir _out -Recurse -Include *.exe,*.pdb | Get-FileHash | Format-Table -AutoSize
     
     - name: 'Upload x64 exe'
       uses: actions/upload-artifact@v2
