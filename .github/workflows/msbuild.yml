@@ -1,0 +1,62 @@
+name: MSBuild
+
+on: [push]
+
+env:
+  # Path to the solution file relative to the root of the project.
+  SOLUTION_FILE_PATH: .
+
+  # Configuration type to build.
+  # You can convert this to a build matrix if you need coverage of multiple configuration types.
+  # https://docs.github.com/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
+  BUILD_CONFIGURATION: Release
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v1
+
+    - name: Restore NuGet packages
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: nuget restore ${{env.SOLUTION_FILE_PATH}}
+
+    - name: Buildx64
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: msbuild /m /p:"Configuration=Release;Platform=x64" ${{env.SOLUTION_FILE_PATH}}
+
+    - name: Buildx86
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: msbuild /m /p:"Configuration=Release;Platform=x86" ${{env.SOLUTION_FILE_PATH}}
+    
+    - name: 'Upload x64 exe'
+      uses: actions/upload-artifact@v2
+      with:
+        name: xmlreg64.exe
+        path: _out/Release/x64/xmlreg64.exe
+        retention-days: 1
+        
+    - name: 'Upload x64 pdb'
+      uses: actions/upload-artifact@v2
+      with:
+        name: xmlreg64.pdb
+        path: _out/Release/x64/xmlreg64.pdb
+        retention-days: 1
+        
+    - name: 'Upload x86 exe'
+      uses: actions/upload-artifact@v2
+      with:
+        name: xmlreg32.exe
+        path: _out/Release/x86/xmlreg32.exe
+        retention-days: 1
+        
+    - name: 'Upload x86 pdb'
+      uses: actions/upload-artifact@v2
+      with:
+        name: xmlreg32.pdb
+        path: _out/Release/x86/xmlreg32.pdb
+        retention-days: 1
